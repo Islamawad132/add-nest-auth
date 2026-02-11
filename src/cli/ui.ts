@@ -10,7 +10,7 @@ import { join } from 'path';
 // Get version from package.json
 function getVersion(): string {
   try {
-    const packageJsonPath = join(__dirname, '../../package.json');
+    const packageJsonPath = join(__dirname, '../package.json');
     const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
     return packageJson.version;
   } catch (error) {
