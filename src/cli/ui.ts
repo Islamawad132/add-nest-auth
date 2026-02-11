@@ -4,6 +4,19 @@
 
 import chalk from 'chalk';
 import ora, { Ora } from 'ora';
+import { readFileSync } from 'fs';
+import { join } from 'path';
+
+// Get version from package.json
+function getVersion(): string {
+  try {
+    const packageJsonPath = join(__dirname, '../../package.json');
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'));
+    return packageJson.version;
+  } catch (error) {
+    return '1.0.0'; // Fallback version
+  }
+}
 
 /**
  * ASCII art banner
@@ -17,7 +30,7 @@ export function showBanner(): void {
  | | | | |_| || |_| | | | | |  | |  __/
  \\_| |_/\\__,_| \\__|_| |_| \\_|  |_/\\___|
   `));
-  console.log(chalk.bold('🔐 NestJS Authentication Module Generator v1.0.0'));
+  console.log(chalk.bold(`🔐 NestJS Authentication Module Generator v${getVersion()}`));
   console.log();
 }
 
