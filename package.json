@@ -1,6 +1,6 @@
 {
   "name": "add-nest-auth",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Add production-ready authentication to any NestJS project in 60 seconds",
   "keywords": [
     "nestjs",
