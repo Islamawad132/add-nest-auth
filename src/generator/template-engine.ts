@@ -14,7 +14,7 @@ export class TemplateEngine {
   constructor(templatesDir?: string) {
     this.handlebars = Handlebars.create();
     this.templateCache = new Map();
-    this.templatesDir = templatesDir || path.join(__dirname, 'templates');
+    this.templatesDir = templatesDir || path.join(__dirname, 'generator', 'templates');
     this.registerHelpers();
   }
 
