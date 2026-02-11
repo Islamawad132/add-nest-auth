@@ -1,0 +1,31 @@
+// Add this to your main.ts for global JWT authentication
+// Location: src/main.ts
+
+import { NestFactory, Reflector } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+import { ValidationPipe } from '@nestjs/common';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Enable global validation pipe
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // Enable global JWT guard (all routes protected by default)
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
+
+  // Enable CORS if needed
+  app.enableCors();
+
+  await app.listen(3000);
+  console.log('🚀 Application is running on: http://localhost:3000');
+}
+bootstrap();

@@ -20,10 +20,18 @@ export class JwtStrategy extends PassportStrategy(Strategy) {
 {{/if}}
     private configService: ConfigService,
   ) {
+    const secret = configService.get<string>('JWT_SECRET');
+
+    if (!secret) {
+      throw new Error(
+        'JWT_SECRET is not defined. Please add JWT_SECRET to your .env file.'
+      );
+    }
+
     super({
       jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('JWT_SECRET'),
+      secretOrKey: secret,
     });
   }
 
