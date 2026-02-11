@@ -36,9 +36,9 @@
   },
   "repository": {
     "type": "git",
-    "url": "https://github.com/yourusername/add-nest-auth.git"
+    "url": "https://github.com/Islamawad132/add-nest-auth.git"
   },
-  "author": "Your Name",
+  "author": "Islamawad132",
   "license": "MIT",
   "dependencies": {
     "chalk": "^5.3.0",
