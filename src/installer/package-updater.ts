@@ -62,7 +62,7 @@ export class PackageUpdater {
     const dependencies: Record<string, string> = {
       '@nestjs/jwt': '^11.0.0',
       '@nestjs/passport': '^11.0.0',
-      '@nestjs/config': '^3.0.0',
+      '@nestjs/config': '^4.0.0',
       passport: '^0.7.0',
       'passport-jwt': '^4.0.1',
       'passport-local': '^1.0.0',

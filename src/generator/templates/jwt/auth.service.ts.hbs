@@ -97,7 +97,7 @@ export class AuthService {
       email: registerDto.email,
       password: hashedPassword,
 {{#if rbac.enabled}}
-      roles: ['User'], // Default role
+      roles: registerDto.roles || ['User'], // Use provided roles or default to User
 {{/if}}
     });
 

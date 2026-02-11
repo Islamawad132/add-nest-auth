@@ -121,11 +121,38 @@ Authorization: Bearer <accessToken>
 ```
 {{/if}}
 
+## Setup
+
+### Enable Global JWT Guard (Recommended)
+
+To automatically protect all routes by default, add the JWT guard globally in your `main.ts`:
+
+```typescript
+import { NestFactory, Reflector } from '@nestjs/core';
+import { AppModule } from './app.module';
+import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule);
+
+  // Enable global JWT guard
+  const reflector = app.get(Reflector);
+  app.useGlobalGuards(new JwtAuthGuard(reflector));
+
+  await app.listen(3000);
+}
+bootstrap();
+```
+
+This makes all routes protected by default. Use `@Public()` to make specific routes public.
+
+**Alternative:** Manually add `@UseGuards(JwtAuthGuard)` to each protected controller/route.
+
 ## Usage
 
 ### Protect Routes
 
-By default, all routes require authentication. Use the `@Public()` decorator to make routes public:
+By default (with global guard), all routes require authentication. Use the `@Public()` decorator to make routes public:
 
 ```typescript
 import { Public } from './auth/decorators/public.decorator';

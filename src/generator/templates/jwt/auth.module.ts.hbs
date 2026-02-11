@@ -25,12 +25,17 @@ import { RefreshToken } from '../users/entities/refresh-token.entity';
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
-      useFactory: async (configService: ConfigService) => ({
-        secret: configService.get<string>('JWT_SECRET'),
-        signOptions: {
-          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '{{jwt.accessExpiration}}'),
-        },
-      }),
+      useFactory: async (configService: ConfigService) => {
+        const secret = configService.get<string>('JWT_SECRET');
+        const expiresIn = configService.get<string>('JWT_EXPIRES_IN', '{{jwt.accessExpiration}}');
+
+        return {
+          secret,
+          signOptions: {
+            expiresIn: expiresIn as any, // NestJS accepts string or number
+          },
+        };
+      },
     }),
 {{#if (eq orm "typeorm")}}
     TypeOrmModule.forFeature([
