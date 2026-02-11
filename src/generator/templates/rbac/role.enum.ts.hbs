@@ -1,0 +1,5 @@
+export enum Role {
+{{#each rbac.roles}}
+  {{uppercase this}} = '{{this}}',
+{{/each}}
+}

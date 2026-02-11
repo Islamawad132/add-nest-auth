@@ -1,0 +1,48 @@
+import { Module } from '@nestjs/common';
+import { JwtModule } from '@nestjs/jwt';
+import { PassportModule } from '@nestjs/passport';
+import { ConfigModule, ConfigService } from '@nestjs/config';
+{{#if (eq orm "typeorm")}}
+import { TypeOrmModule } from '@nestjs/typeorm';
+{{/if}}
+import { AuthService } from './auth.service';
+import { AuthController } from './auth.controller';
+import { JwtStrategy } from './strategies/jwt.strategy';
+import { LocalStrategy } from './strategies/local.strategy';
+import { UsersModule } from '../users/users.module';
+{{#if (eq orm "typeorm")}}
+import { User } from '../users/entities/user.entity';
+{{#if features.refreshTokens}}
+import { RefreshToken } from '../users/entities/refresh-token.entity';
+{{/if}}
+{{/if}}
+
+@Module({
+  imports: [
+    UsersModule,
+    PassportModule,
+    ConfigModule,
+    JwtModule.registerAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: async (configService: ConfigService) => ({
+        secret: configService.get<string>('JWT_SECRET'),
+        signOptions: {
+          expiresIn: configService.get<string>('JWT_EXPIRES_IN', '{{jwt.accessExpiration}}'),
+        },
+      }),
+    }),
+{{#if (eq orm "typeorm")}}
+    TypeOrmModule.forFeature([
+      User,
+{{#if features.refreshTokens}}
+      RefreshToken,
+{{/if}}
+    ]),
+{{/if}}
+  ],
+  controllers: [AuthController],
+  providers: [AuthService, JwtStrategy, LocalStrategy],
+  exports: [AuthService],
+})
+export class AuthModule {}

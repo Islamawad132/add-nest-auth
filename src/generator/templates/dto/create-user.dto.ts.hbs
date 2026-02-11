@@ -1,0 +1,17 @@
+import { IsEmail, IsNotEmpty, IsString{{#if rbac.enabled}}, IsArray, IsOptional{{/if}} } from 'class-validator';
+
+export class CreateUserDto {
+  @IsEmail()
+  @IsNotEmpty()
+  email: string;
+
+  @IsString()
+  @IsNotEmpty()
+  password: string;
+
+{{#if rbac.enabled}}
+  @IsArray()
+  @IsOptional()
+  roles?: string[];
+{{/if}}
+}

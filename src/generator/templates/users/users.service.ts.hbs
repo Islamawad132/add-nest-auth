@@ -1,0 +1,93 @@
+import { Injectable, ConflictException, NotFoundException } from '@nestjs/common';
+{{#if (eq orm "typeorm")}}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+import { User } from './entities/user.entity';
+{{/if}}
+import { CreateUserDto } from '../auth/dto/create-user.dto';
+
+@Injectable()
+export class UsersService {
+{{#if (eq orm "typeorm")}}
+  constructor(
+    @InjectRepository(User)
+    private usersRepository: Repository<User>,
+  ) {}
+
+  /**
+   * Create a new user
+   */
+  async create(createUserDto: CreateUserDto): Promise<User> {
+    // Check if user already exists
+    const existingUser = await this.usersRepository.findOne({
+      where: { email: createUserDto.email },
+    });
+
+    if (existingUser) {
+      throw new ConflictException('User with this email already exists');
+    }
+
+    const user = this.usersRepository.create(createUserDto);
+    return await this.usersRepository.save(user);
+  }
+
+  /**
+   * Find user by email
+   */
+  async findByEmail(email: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { email },
+    });
+  }
+
+  /**
+   * Find user by ID
+   */
+  async findById(id: string): Promise<User | null> {
+    return await this.usersRepository.findOne({
+      where: { id },
+    });
+  }
+
+  /**
+   * Find all users
+   */
+  async findAll(): Promise<User[]> {
+    return await this.usersRepository.find({
+      select: ['id', 'email'{{#if rbac.enabled}}, 'roles'{{/if}}, 'createdAt'],
+    });
+  }
+{{else}}
+  /**
+   * Create a new user
+   * TODO: Implement with your ORM
+   */
+  async create(createUserDto: CreateUserDto): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Find user by email
+   * TODO: Implement with your ORM
+   */
+  async findByEmail(email: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Find user by ID
+   * TODO: Implement with your ORM
+   */
+  async findById(id: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Find all users
+   * TODO: Implement with your ORM
+   */
+  async findAll(): Promise<any[]> {
+    throw new Error('Not implemented');
+  }
+{{/if}}
+}

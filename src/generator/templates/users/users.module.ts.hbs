@@ -1,0 +1,27 @@
+import { Module } from '@nestjs/common';
+{{#if (eq orm "typeorm")}}
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { User } from './entities/user.entity';
+{{#if features.refreshTokens}}
+import { RefreshToken } from './entities/refresh-token.entity';
+{{/if}}
+{{/if}}
+import { UsersService } from './users.service';
+import { UsersController } from './users.controller';
+
+@Module({
+{{#if (eq orm "typeorm")}}
+  imports: [
+    TypeOrmModule.forFeature([
+      User,
+{{#if features.refreshTokens}}
+      RefreshToken,
+{{/if}}
+    ]),
+  ],
+{{/if}}
+  controllers: [UsersController],
+  providers: [UsersService],
+  exports: [UsersService],
+})
+export class UsersModule {}

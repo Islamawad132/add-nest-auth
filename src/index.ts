@@ -1,0 +1,140 @@
+/**
+ * Main CLI orchestrator
+ */
+
+import { detectProject } from './analyzer/index.js';
+import { promptConfig, buildConfig } from './cli/prompts.js';
+import {
+  showBanner,
+  showProjectInfo,
+  showError,
+  showNestJSHelp,
+  showSuccess,
+  createSpinner,
+} from './cli/ui.js';
+
+export async function run(cwd: string = process.cwd()): Promise<void> {
+  // Show banner
+  showBanner();
+
+  // Analyze project
+  const spinner = createSpinner('Analyzing project...').start();
+
+  const projectInfo = await detectProject(cwd);
+
+  if (!projectInfo.isValid) {
+    spinner.fail('Project validation failed');
+    showError('Not a valid NestJS project', projectInfo.errors);
+    showNestJSHelp();
+    process.exit(1);
+  }
+
+  spinner.succeed('Project analyzed');
+
+  // Show detected info
+  showProjectInfo({
+    nestVersion: projectInfo.nestVersion,
+    orm: projectInfo.orm,
+    sourceRoot: projectInfo.sourceRoot,
+  });
+
+  // Prompt for configuration
+  const answers = await promptConfig(projectInfo.orm);
+
+  // Build configuration
+  const config = buildConfig(
+    answers,
+    projectInfo.root.split(/[/\\]/).pop() || 'project',
+    projectInfo.sourceRoot,
+    projectInfo.orm
+  );
+
+  console.log();
+  console.log('⚙️  Generating authentication module...');
+  console.log();
+
+  // Generate files
+  const { Generator } = await import('./generator/index.js');
+  const generator = new Generator();
+
+  const genSpinner = createSpinner('Generating files from templates...').start();
+
+  const result = await generator.generate(config, projectInfo);
+
+  if (!result.success) {
+    genSpinner.fail('Generation failed');
+    showError('Failed to generate files', [result.error || 'Unknown error']);
+    process.exit(1);
+  }
+
+  genSpinner.succeed(`Generated ${result.filesCreated.length} files`);
+
+  // Update app.module.ts with AST
+  const astSpinner = createSpinner('Updating app.module.ts...').start();
+
+  try {
+    const { AppModuleUpdater } = await import('./installer/index.js');
+    const astUpdater = new AppModuleUpdater(projectInfo.appModulePath);
+    await astUpdater.update();
+    await astUpdater.cleanupBackup();
+    astSpinner.succeed('Updated app.module.ts');
+  } catch (error) {
+    astSpinner.fail('Failed to update app.module.ts');
+    showError(
+      'AST modification failed',
+      [error instanceof Error ? error.message : 'Unknown error']
+    );
+    process.exit(1);
+  }
+
+  // Update package.json
+  const pkgSpinner = createSpinner('Updating package.json...').start();
+
+  try {
+    const { PackageUpdater } = await import('./installer/index.js');
+    const pkgUpdater = new PackageUpdater(projectInfo.packageJsonPath);
+    await pkgUpdater.update(config);
+    await pkgUpdater.cleanupBackup();
+    pkgSpinner.succeed('Updated package.json');
+  } catch (error) {
+    pkgSpinner.fail('Failed to update package.json');
+    showError(
+      'Package update failed',
+      [error instanceof Error ? error.message : 'Unknown error']
+    );
+    process.exit(1);
+  }
+
+  // Install dependencies
+  if (config.autoInstall) {
+    const installSpinner = createSpinner('Installing dependencies...').start();
+
+    try {
+      const { DependencyInstaller } = await import('./installer/index.js');
+      const installer = new DependencyInstaller();
+      await installer.install(projectInfo.root);
+      installSpinner.succeed('Dependencies installed');
+    } catch (error) {
+      installSpinner.fail('Failed to install dependencies');
+      console.log(
+        '\n⚠️  Please run npm install manually to install dependencies\n'
+      );
+    }
+  }
+
+  // Show success message
+  showSuccess({
+    filesCreated: result.filesCreated.length,
+    dependenciesAdded: 8,
+    jwt: {
+      accessExpiration: config.jwt.accessExpiration,
+      refreshExpiration: config.features.refreshTokens
+        ? config.jwt.refreshExpiration
+        : undefined,
+    },
+  });
+
+  console.log('🐛 Issues? https://github.com/yourusername/add-nest-auth/issues');
+  console.log('⭐ Like it? https://github.com/yourusername/add-nest-auth');
+  console.log();
+}

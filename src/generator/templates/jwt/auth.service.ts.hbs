@@ -1,0 +1,193 @@
+import { Injectable, UnauthorizedException } from '@nestjs/common';
+import { JwtService } from '@nestjs/jwt';
+{{#if (eq orm "typeorm")}}
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
+{{/if}}
+import * as bcrypt from 'bcrypt';
+import { UsersService } from '../users/users.service';
+{{#if (eq orm "typeorm")}}
+import { User } from '../users/entities/user.entity';
+{{#if features.refreshTokens}}
+import { RefreshToken } from '../users/entities/refresh-token.entity';
+{{/if}}
+{{/if}}
+import { LoginDto } from './dto/login.dto';
+import { RegisterDto } from './dto/register.dto';
+import { AuthResponseDto } from './dto/auth-response.dto';
+
+@Injectable()
+export class AuthService {
+  constructor(
+    private usersService: UsersService,
+    private jwtService: JwtService,
+{{#if (eq orm "typeorm")}}
+{{#if features.refreshTokens}}
+    @InjectRepository(RefreshToken)
+    private refreshTokenRepository: Repository<RefreshToken>,
+{{/if}}
+{{/if}}
+  ) {}
+
+  /**
+   * Validate user credentials
+   */
+  async validateUser(email: string, password: string): Promise<any> {
+    const user = await this.usersService.findByEmail(email);
+    if (!user) {
+      return null;
+    }
+
+    const isPasswordValid = await bcrypt.compare(password, user.password);
+    if (!isPasswordValid) {
+      return null;
+    }
+
+    const { password: _, ...result } = user;
+    return result;
+  }
+
+  /**
+   * User login
+   */
+  async login(loginDto: LoginDto): Promise<AuthResponseDto> {
+    const user = await this.validateUser(loginDto.email, loginDto.password);
+    if (!user) {
+      throw new UnauthorizedException('Invalid credentials');
+    }
+
+    const payload = { email: user.email, sub: user.id{{#if rbac.enabled}}, roles: user.roles{{/if}} };
+    const accessToken = this.jwtService.sign(payload);
+
+{{#if features.refreshTokens}}
+    const refreshToken = await this.createRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: {
+        id: user.id,
+        email: user.email,
+{{#if rbac.enabled}}
+        roles: user.roles,
+{{/if}}
+      },
+    };
+{{else}}
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+{{#if rbac.enabled}}
+        roles: user.roles,
+{{/if}}
+      },
+    };
+{{/if}}
+  }
+
+  /**
+   * User registration
+   */
+  async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
+    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+
+    const user = await this.usersService.create({
+      email: registerDto.email,
+      password: hashedPassword,
+{{#if rbac.enabled}}
+      roles: ['User'], // Default role
+{{/if}}
+    });
+
+    const payload = { email: user.email, sub: user.id{{#if rbac.enabled}}, roles: user.roles{{/if}} };
+    const accessToken = this.jwtService.sign(payload);
+
+{{#if features.refreshTokens}}
+    const refreshToken = await this.createRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: {
+        id: user.id,
+        email: user.email,
+{{#if rbac.enabled}}
+        roles: user.roles,
+{{/if}}
+      },
+    };
+{{else}}
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+{{#if rbac.enabled}}
+        roles: user.roles,
+{{/if}}
+      },
+    };
+{{/if}}
+  }
+
+{{#if features.refreshTokens}}
+  /**
+   * Create a refresh token
+   */
+  private async createRefreshToken(userId: string): Promise<RefreshToken> {
+    const token = this.jwtService.sign(
+      { sub: userId },
+      { expiresIn: '{{jwt.refreshExpiration}}' }
+    );
+
+{{#if (eq orm "typeorm")}}
+    const expiresAt = new Date();
+    expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
+
+    const refreshToken = this.refreshTokenRepository.create({
+      token,
+      userId,
+      expiresAt,
+    });
+
+    return await this.refreshTokenRepository.save(refreshToken);
+{{else}}
+    // TODO: Implement refresh token storage for your ORM
+    return { token, userId, expiresAt: new Date() } as any;
+{{/if}}
+  }
+
+  /**
+   * Refresh access token
+   */
+  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+    try {
+      const payload = this.jwtService.verify(refreshToken);
+
+{{#if (eq orm "typeorm")}}
+      const storedToken = await this.refreshTokenRepository.findOne({
+        where: { token: refreshToken },
+      });
+
+      if (!storedToken || storedToken.expiresAt < new Date()) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+{{/if}}
+
+      const user = await this.usersService.findById(payload.sub);
+      if (!user) {
+        throw new UnauthorizedException('User not found');
+      }
+
+      const newPayload = { email: user.email, sub: user.id{{#if rbac.enabled}}, roles: user.roles{{/if}} };
+      const accessToken = this.jwtService.sign(newPayload);
+
+      return { accessToken };
+    } catch (error) {
+      throw new UnauthorizedException('Invalid refresh token');
+    }
+  }
+{{/if}}
+}

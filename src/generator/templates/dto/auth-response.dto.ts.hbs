@@ -1,0 +1,13 @@
+export class AuthResponseDto {
+  accessToken: string;
+{{#if features.refreshTokens}}
+  refreshToken: string;
+{{/if}}
+  user: {
+    id: string;
+    email: string;
+{{#if rbac.enabled}}
+    roles: string[];
+{{/if}}
+  };
+}

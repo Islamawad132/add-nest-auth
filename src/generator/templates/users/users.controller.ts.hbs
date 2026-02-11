@@ -1,0 +1,31 @@
+import { Controller, Get{{#if rbac.enabled}}, UseGuards{{/if}} } from '@nestjs/common';
+{{#if rbac.enabled}}
+import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
+{{/if}}
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { UsersService } from './users.service';
+
+@Controller('users')
+{{#if rbac.enabled}}
+@UseGuards(JwtAuthGuard, RolesGuard)
+{{else}}
+@UseGuards(JwtAuthGuard)
+{{/if}}
+export class UsersController {
+  constructor(private readonly usersService: UsersService) {}
+
+  @Get('profile')
+  getProfile(@CurrentUser() user: any) {
+    return user;
+  }
+
+{{#if rbac.enabled}}
+  @Get()
+  @Roles('Admin')
+  findAll() {
+    return this.usersService.findAll();
+  }
+{{/if}}
+}
