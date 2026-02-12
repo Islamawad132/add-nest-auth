@@ -51,6 +51,9 @@ export class ProjectDetector {
       return this.createInvalidProject(root, errors);
     }
 
+    // Check main.ts
+    const mainTsPath = path.join(root, sourceRoot, 'main.ts');
+
     // Detect ORM
     const orm = await detectORM(packageJson);
 
@@ -64,6 +67,7 @@ export class ProjectDetector {
       root,
       sourceRoot,
       appModulePath,
+      mainTsPath,
       packageJsonPath,
       nestCliConfigPath,
       orm,
@@ -109,6 +113,7 @@ export class ProjectDetector {
       root,
       sourceRoot: 'src',
       appModulePath: path.join(root, 'src', 'app.module.ts'),
+      mainTsPath: path.join(root, 'src', 'main.ts'),
       packageJsonPath: path.join(root, 'package.json'),
       nestCliConfigPath: path.join(root, 'nest-cli.json'),
       orm: 'none',

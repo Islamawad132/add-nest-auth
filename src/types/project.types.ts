@@ -8,6 +8,7 @@ export interface ProjectInfo {
   root: string;
   sourceRoot: string;
   appModulePath: string;
+  mainTsPath: string;
   packageJsonPath: string;
   nestCliConfigPath: string;
 

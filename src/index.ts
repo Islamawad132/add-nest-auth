@@ -87,6 +87,19 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
     process.exit(1);
   }
 
+  // Update main.ts with global guards
+  const mainSpinner = createSpinner('Updating main.ts with global guards...').start();
+
+  try {
+    const { MainTsUpdater } = await import('./installer/index.js');
+    const mainUpdater = new MainTsUpdater(projectInfo.mainTsPath);
+    await mainUpdater.update();
+    await mainUpdater.cleanupBackup();
+    mainSpinner.succeed('Updated main.ts with global JWT guard');
+  } catch (error) {
+    mainSpinner.warn('Could not auto-update main.ts (see main.ts.example for manual setup)');
+  }
+
   // Update package.json
   const pkgSpinner = createSpinner('Updating package.json...').start();
 
@@ -134,7 +147,7 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
     },
   });
 
-  console.log('🐛 Issues? https://github.com/yourusername/add-nest-auth/issues');
-  console.log('⭐ Like it? https://github.com/yourusername/add-nest-auth');
+  console.log('🐛 Issues? https://github.com/Islamawad132/add-nest-auth/issues');
+  console.log('⭐ Like it? https://github.com/Islamawad132/add-nest-auth');
   console.log();
 }
