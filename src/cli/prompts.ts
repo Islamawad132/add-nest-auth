@@ -13,6 +13,7 @@ export interface PromptAnswers {
   refreshTokens: boolean;
   accessExpiration: string;
   refreshExpiration: string;
+  enableRateLimiting: boolean;
   useDetectedORM: boolean;
   database: string;
   autoInstall: boolean;
@@ -33,8 +34,8 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
       message: 'Choose authentication strategy:',
       choices: [
         { name: 'JWT Authentication (Recommended)', value: 'jwt' },
-        { name: 'OAuth 2.0 (Google, GitHub) [v1.1]', value: 'oauth', disabled: true },
-        { name: 'Session-based (Traditional) [v1.2]', value: 'session', disabled: true },
+        { name: 'OAuth 2.0 (Google, GitHub) [Coming soon]', value: 'oauth', disabled: true },
+        { name: 'Session-based (Traditional) [Coming soon]', value: 'session', disabled: true },
       ],
       default: 'jwt',
     },
@@ -96,6 +97,12 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
     },
     {
       type: 'confirm',
+      name: 'enableRateLimiting',
+      message: 'Enable rate limiting on auth endpoints? (recommended)',
+      default: true,
+    },
+    {
+      type: 'confirm',
       name: 'useDetectedORM',
       message: `Detected ${detectedORM.toUpperCase()}${dbLabel}. Use it?`,
       default: true,
@@ -126,6 +133,24 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
 }
 
 /**
+ * Get default answers (for --yes flag)
+ */
+export function getDefaultAnswers(detectedORM: ORM, detectedDB?: string): PromptAnswers {
+  return {
+    strategy: 'jwt',
+    enableRBAC: true,
+    roles: ['Admin', 'User'],
+    refreshTokens: true,
+    accessExpiration: '1h',
+    refreshExpiration: '7d',
+    enableRateLimiting: true,
+    useDetectedORM: true,
+    database: detectedDB || 'postgres',
+    autoInstall: true,
+  };
+}
+
+/**
  * Build AuthConfig from prompt answers
  */
 export function buildConfig(
@@ -147,6 +172,7 @@ export function buildConfig(
     database: answers.database || detectedDB || 'postgres',
     features: {
       refreshTokens: answers.refreshTokens,
+      rateLimiting: answers.enableRateLimiting,
     },
     jwt: {
       secret: generateSecret(),
@@ -155,7 +181,7 @@ export function buildConfig(
     },
     autoInstall: answers.autoInstall,
     timestamp: new Date().toISOString(),
-    generatorVersion: '1.0.0',
+    generatorVersion: '1.1.0',
   };
 
   return config;

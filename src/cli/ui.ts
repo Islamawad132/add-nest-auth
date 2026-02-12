@@ -107,25 +107,26 @@ export function showSuccess(stats: {
   if (stats.jwt.refreshExpiration) {
     console.log(`   • Refresh token: ${stats.jwt.refreshExpiration}`);
   }
-  console.log(`   • Secret: Auto-generated (see .env.example)`);
+  console.log(`   • Secret: Auto-generated (see .env)`);
   console.log();
 
   console.log(chalk.bold('📋 Next steps:'));
-  console.log(chalk.cyan('   1. Copy .env.example to .env'));
-  console.log(chalk.gray('      cp .env.example .env'));
+  console.log(chalk.cyan('   1. Review .env file (auto-generated with secure secret)'));
+  console.log(chalk.gray('      # .env.example is also provided as a git-safe reference'));
   console.log();
-  console.log(chalk.cyan('   2. Update JWT_SECRET in .env (or keep auto-generated)'));
-  console.log();
-  console.log(chalk.cyan('   3. Create database migration (if using TypeORM)'));
+  console.log(chalk.cyan('   2. Create database migration (if using TypeORM)'));
   console.log(chalk.gray('      npm run migration:generate -- src/migrations/CreateUserTable'));
   console.log(chalk.gray('      npm run migration:run'));
   console.log();
-  console.log(chalk.cyan('   4. Start your NestJS app'));
+  console.log(chalk.cyan('   3. Start your NestJS app'));
   console.log(chalk.gray('      npm run start:dev'));
   console.log();
-  console.log(chalk.cyan('   5. Test authentication endpoints'));
+  console.log(chalk.cyan('   4. Test authentication endpoints'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/register'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/login'));
+  console.log(chalk.gray('      POST http://localhost:3000/auth/refresh'));
+  console.log(chalk.gray('      POST http://localhost:3000/auth/logout (requires JWT)'));
+  console.log(chalk.gray('      POST http://localhost:3000/auth/logout-all (requires JWT)'));
   console.log(chalk.gray('      GET  http://localhost:3000/users/profile (requires JWT)'));
   console.log();
 

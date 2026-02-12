@@ -99,6 +99,11 @@ export class PackageUpdater {
       }
     }
 
+    // Add rate limiting dependency
+    if (config.features.rateLimiting) {
+      dependencies['@nestjs/throttler'] = '^6.0.0';
+    }
+
     return { dependencies, devDependencies };
   }
 

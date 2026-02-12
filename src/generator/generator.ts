@@ -159,6 +159,7 @@ export class Generator {
     // Configuration files
     plan.push(
       { template: 'shared/env.template.hbs', output: '.env.example' },
+      { template: 'shared/env.hbs', output: '.env' },
       { template: 'shared/README.auth.md.hbs', output: `${config.sourceRoot}/auth/README.md` },
       { template: 'shared/main.ts.snippet.hbs', output: 'main.ts.example' }
     );

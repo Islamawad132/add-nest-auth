@@ -1,6 +1,8 @@
-import { Controller, Post, Body, UseGuards{{#if features.refreshTokens}}, HttpCode, HttpStatus{{/if}} } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus{{#if features.refreshTokens}}, Req{{/if}} } from '@nestjs/common';
+{{#if features.rateLimiting}}
+import { Throttle } from '@nestjs/throttler';
+{{/if}}
 import { AuthService } from './auth.service';
-import { LocalAuthGuard } from './guards/local-auth.guard';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
@@ -13,12 +15,18 @@ export class AuthController {
   @Public()
   @Post('login')
   @HttpCode(HttpStatus.OK)
+{{#if features.rateLimiting}}
+  @Throttle({ default: { limit: 5, ttl: 60000 } })
+{{/if}}
   async login(@Body() loginDto: LoginDto): Promise<AuthResponseDto> {
     return this.authService.login(loginDto);
   }
 
   @Public()
   @Post('register')
+{{#if features.rateLimiting}}
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+{{/if}}
   async register(@Body() registerDto: RegisterDto): Promise<AuthResponseDto> {
     return this.authService.register(registerDto);
   }
@@ -27,8 +35,22 @@ export class AuthController {
   @Public()
   @Post('refresh')
   @HttpCode(HttpStatus.OK)
-  async refresh(@Body('refreshToken') refreshToken: string): Promise<{ accessToken: string }> {
+  async refresh(@Body('refreshToken') refreshToken: string): Promise<AuthResponseDto> {
     return this.authService.refreshAccessToken(refreshToken);
+  }
+
+  @Post('logout')
+  @HttpCode(HttpStatus.OK)
+  async logout(@Body('refreshToken') refreshToken: string): Promise<{ message: string }> {
+    await this.authService.logout(refreshToken);
+    return { message: 'Logged out successfully' };
+  }
+
+  @Post('logout-all')
+  @HttpCode(HttpStatus.OK)
+  async logoutAll(@Req() req: any): Promise<{ message: string }> {
+    await this.authService.logoutAll(req.user.id);
+    return { message: 'Logged out from all devices' };
   }
 {{/if}}
 }

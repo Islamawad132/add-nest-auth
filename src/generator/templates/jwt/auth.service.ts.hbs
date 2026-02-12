@@ -1,5 +1,6 @@
 import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
 {{#if (eq orm "typeorm")}}
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
@@ -21,6 +22,7 @@ export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
+    private configService: ConfigService,
 {{#if (eq orm "typeorm")}}
 {{#if features.refreshTokens}}
     @InjectRepository(RefreshToken)
@@ -91,7 +93,8 @@ export class AuthService {
    * User registration
    */
   async register(registerDto: RegisterDto): Promise<AuthResponseDto> {
-    const hashedPassword = await bcrypt.hash(registerDto.password, 10);
+    const bcryptRounds = this.configService.get<number>('BCRYPT_ROUNDS', 10);
+    const hashedPassword = await bcrypt.hash(registerDto.password, bcryptRounds);
 
     const user = await this.usersService.create({
       email: registerDto.email,
@@ -160,9 +163,9 @@ export class AuthService {
   }
 
   /**
-   * Refresh access token
+   * Refresh access token (with token rotation)
    */
-  async refreshAccessToken(refreshToken: string): Promise<{ accessToken: string }> {
+  async refreshAccessToken(refreshToken: string): Promise<AuthResponseDto> {
     try {
       const payload = this.jwtService.verify(refreshToken);
 
@@ -174,6 +177,9 @@ export class AuthService {
       if (!storedToken || storedToken.expiresAt < new Date()) {
         throw new UnauthorizedException('Invalid refresh token');
       }
+
+      // Delete the old refresh token (one-time use)
+      await this.refreshTokenRepository.remove(storedToken);
 {{/if}}
 
       const user = await this.usersService.findById(payload.sub);
@@ -184,10 +190,54 @@ export class AuthService {
       const newPayload = { email: user.email, sub: user.id{{#if rbac.enabled}}, roles: user.roles{{/if}} };
       const accessToken = this.jwtService.sign(newPayload);
 
-      return { accessToken };
+      // Issue a new refresh token (rotation)
+      const newRefreshToken = await this.createRefreshToken(user.id);
+
+      return {
+        accessToken,
+        refreshToken: newRefreshToken.token,
+        user: {
+          id: user.id,
+          email: user.email,
+{{#if rbac.enabled}}
+          roles: user.roles,
+{{/if}}
+        },
+      };
     } catch (error) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
       throw new UnauthorizedException('Invalid refresh token');
     }
+  }
+
+  /**
+   * Logout - delete the specific refresh token
+   */
+  async logout(refreshToken: string): Promise<void> {
+{{#if (eq orm "typeorm")}}
+    const storedToken = await this.refreshTokenRepository.findOne({
+      where: { token: refreshToken },
+    });
+
+    if (storedToken) {
+      await this.refreshTokenRepository.remove(storedToken);
+    }
+{{else}}
+    // TODO: Implement refresh token deletion for your ORM
+{{/if}}
+  }
+
+  /**
+   * Logout from all devices - delete all refresh tokens for user
+   */
+  async logoutAll(userId: string): Promise<void> {
+{{#if (eq orm "typeorm")}}
+    await this.refreshTokenRepository.delete({ userId });
+{{else}}
+    // TODO: Implement all refresh token deletion for your ORM
+{{/if}}
   }
 {{/if}}
 }

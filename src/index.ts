@@ -3,7 +3,7 @@
  */
 
 import { detectProject } from './analyzer/index.js';
-import { promptConfig, buildConfig } from './cli/prompts.js';
+import { promptConfig, buildConfig, getDefaultAnswers } from './cli/prompts.js';
 import {
   showBanner,
   showProjectInfo,
@@ -13,7 +13,11 @@ import {
   createSpinner,
 } from './cli/ui.js';
 
-export async function run(cwd: string = process.cwd()): Promise<void> {
+export interface RunOptions {
+  yes?: boolean;
+}
+
+export async function run(cwd: string = process.cwd(), options: RunOptions = {}): Promise<void> {
   // Show banner
   showBanner();
 
@@ -40,6 +44,10 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
 
   // Check if auth module already exists
   if (projectInfo.authExists) {
+    if (options.yes) {
+      console.log('\n  auth/ directory already exists. Use interactive mode to overwrite.\n');
+      process.exit(0);
+    }
     const inquirer = (await import('inquirer')).default;
     const { overwrite } = await inquirer.prompt([{
       type: 'confirm',
@@ -53,8 +61,10 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
     }
   }
 
-  // Prompt for configuration
-  const answers = await promptConfig(projectInfo.orm, projectInfo.database);
+  // Prompt for configuration (or use defaults with --yes)
+  const answers = options.yes
+    ? getDefaultAnswers(projectInfo.orm, projectInfo.database)
+    : await promptConfig(projectInfo.orm, projectInfo.database);
 
   // Build configuration
   const config = buildConfig(
