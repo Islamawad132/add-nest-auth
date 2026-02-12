@@ -3,7 +3,8 @@ import { JwtModule } from '@nestjs/jwt';
 import { PassportModule } from '@nestjs/passport';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 {{#if features.rateLimiting}}
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
+import { APP_GUARD } from '@nestjs/core';
 {{/if}}
 {{#if (eq orm "typeorm")}}
 import { TypeOrmModule } from '@nestjs/typeorm';
@@ -56,7 +57,17 @@ import { RefreshToken } from '../users/entities/refresh-token.entity';
 {{/if}}
   ],
   controllers: [AuthController],
-  providers: [AuthService, JwtStrategy, LocalStrategy],
+  providers: [
+    AuthService,
+    JwtStrategy,
+    LocalStrategy,
+{{#if features.rateLimiting}}
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+{{/if}}
+  ],
   exports: [AuthService],
 })
 export class AuthModule {}
