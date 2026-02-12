@@ -12,6 +12,11 @@ import { RefreshToken } from '../users/entities/refresh-token.entity';
 {{/if}}
 {{/if}}
 
+jest.mock('bcrypt', () => ({
+  compare: jest.fn(),
+  hash: jest.fn(),
+}));
+
 describe('AuthService', () => {
   let authService: AuthService;
   let usersService: UsersService;
@@ -110,7 +115,7 @@ describe('AuthService', () => {
   describe('validateUser', () => {
     it('should return user without password for valid credentials', async () => {
       mockUsersService.findByEmail.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 
       const result = await authService.validateUser('test@example.com', 'password123');
 
@@ -129,7 +134,7 @@ describe('AuthService', () => {
 
     it('should return null if password is invalid', async () => {
       mockUsersService.findByEmail.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       const result = await authService.validateUser('test@example.com', 'wrongpassword');
 
@@ -139,9 +144,8 @@ describe('AuthService', () => {
 
   describe('login', () => {
     it('should return access token and user for valid credentials', async () => {
-      const userWithoutPassword = { id: mockUser.id, email: mockUser.email{{#if features.useUsername}}, username: mockUser.username{{/if}}{{#if rbac.enabled}}, roles: mockUser.roles{{/if}} };
       mockUsersService.findByEmail.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
 {{#if features.refreshTokens}}
       mockJwtService.sign.mockReturnValue('mock-jwt-token');
 {{#if (eq orm "typeorm")}}
@@ -169,7 +173,7 @@ describe('AuthService', () => {
     it('should create user and return access token', async () => {
       const newUser = { ...mockUser };
       mockUsersService.create.mockResolvedValue(newUser);
-      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => '$2b$10$hashedpassword');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('$2b$10$hashedpassword');
 {{#if features.refreshTokens}}
       mockJwtService.sign.mockReturnValue('mock-jwt-token');
 {{#if (eq orm "typeorm")}}
@@ -195,8 +199,8 @@ describe('AuthService', () => {
   describe('changePassword', () => {
     it('should update password when current password is valid', async () => {
       mockUsersService.findById.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
-      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => '$2b$10$newhashedpassword');
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+      (bcrypt.hash as jest.Mock).mockResolvedValue('$2b$10$newhashedpassword');
       mockUsersService.updatePassword.mockResolvedValue(undefined);
 
       await authService.changePassword('test-uuid', {
@@ -209,7 +213,7 @@ describe('AuthService', () => {
 
     it('should throw UnauthorizedException for wrong current password', async () => {
       mockUsersService.findById.mockResolvedValue(mockUser);
-      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
 
       await expect(
         authService.changePassword('test-uuid', {
@@ -289,7 +293,7 @@ describe('AuthService', () => {
       const futureDate = new Date();
       futureDate.setHours(futureDate.getHours() + 1);
       mockUsersService.findByResetToken.mockResolvedValue({ ...mockUser, passwordResetExpires: futureDate });
-      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => '$2b$10$newhashedpassword');
+      (bcrypt.hash as jest.Mock).mockResolvedValue('$2b$10$newhashedpassword');
       mockUsersService.updatePassword.mockResolvedValue(undefined);
       mockUsersService.clearResetToken.mockResolvedValue(undefined);
 
