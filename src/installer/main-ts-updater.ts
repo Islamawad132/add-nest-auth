@@ -3,7 +3,7 @@
  * Adds Global JWT Guard and ValidationPipe to the NestJS bootstrap function
  */
 
-import { Project, SourceFile, SyntaxKind, Node } from 'ts-morph';
+import { Project, SourceFile, SyntaxKind, Node, IndentationText } from 'ts-morph';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 
@@ -15,6 +15,9 @@ export class MainTsUpdater {
   constructor(private mainTsPath: string) {
     this.project = new Project({
       skipAddingFilesFromTsConfig: true,
+      manipulationSettings: {
+        indentationText: IndentationText.TwoSpaces,
+      },
     });
   }
 
@@ -40,7 +43,8 @@ export class MainTsUpdater {
       // Add global guards and pipes to bootstrap function
       this.addGlobalGuardsAndPipes();
 
-      // Save changes
+      // Format and save
+      this.sourceFile.formatText();
       await this.sourceFile.save();
     } catch (error) {
       // Restore backup on error

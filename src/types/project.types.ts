@@ -17,6 +17,7 @@ export interface ProjectInfo {
   database?: string;
   nestVersion?: string;
   typescriptVersion?: string;
+  authExists?: boolean;
 
   // Validation
   isValid: boolean;

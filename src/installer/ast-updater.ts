@@ -2,7 +2,7 @@
  * AST-based app.module.ts updater using ts-morph
  */
 
-import { Project, SourceFile, SyntaxKind, Node } from 'ts-morph';
+import { Project, SourceFile, SyntaxKind, Node, IndentationText } from 'ts-morph';
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { AuthConfig } from '../types/index.js';
@@ -15,6 +15,9 @@ export class AppModuleUpdater {
   constructor(private appModulePath: string) {
     this.project = new Project({
       skipAddingFilesFromTsConfig: true,
+      manipulationSettings: {
+        indentationText: IndentationText.TwoSpaces,
+      },
     });
   }
 
@@ -35,7 +38,8 @@ export class AppModuleUpdater {
       // Add modules to @Module decorator
       this.addModulesToDecorator(config);
 
-      // Save changes
+      // Format and save
+      this.sourceFile.formatText();
       await this.sourceFile.save();
     } catch (error) {
       // Restore backup on error

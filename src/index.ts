@@ -38,6 +38,21 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
     sourceRoot: projectInfo.sourceRoot,
   });
 
+  // Check if auth module already exists
+  if (projectInfo.authExists) {
+    const inquirer = (await import('inquirer')).default;
+    const { overwrite } = await inquirer.prompt([{
+      type: 'confirm',
+      name: 'overwrite',
+      message: 'auth/ directory already exists. Overwrite existing files?',
+      default: false,
+    }]);
+    if (!overwrite) {
+      console.log('\n⏭️  Cancelled. Existing auth module unchanged.\n');
+      process.exit(0);
+    }
+  }
+
   // Prompt for configuration
   const answers = await promptConfig(projectInfo.orm, projectInfo.database);
 
@@ -60,7 +75,7 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
 
   const genSpinner = createSpinner('Generating files from templates...').start();
 
-  const result = await generator.generate(config, projectInfo);
+  const result = await generator.generate(config, projectInfo, !!projectInfo.authExists);
 
   if (!result.success) {
     genSpinner.fail('Generation failed');

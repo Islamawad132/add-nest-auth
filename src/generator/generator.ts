@@ -35,7 +35,8 @@ export class Generator {
    */
   async generate(
     config: AuthConfig,
-    projectInfo: ProjectInfo
+    projectInfo: ProjectInfo,
+    overwrite: boolean = false
   ): Promise<GenerationResult> {
     try {
       const context = buildTemplateContext(config);
@@ -57,7 +58,7 @@ export class Generator {
         // Write file
         const outputPath = path.join(projectInfo.root, fileSpec.output);
         await this.fileWriter.writeFile(outputPath, content, {
-          overwrite: false,
+          overwrite,
         });
       }
 

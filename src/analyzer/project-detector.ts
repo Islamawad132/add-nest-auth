@@ -60,11 +60,10 @@ export class ProjectDetector {
 
     // Check if auth module already exists
     const authModulePath = path.join(root, sourceRoot, 'auth');
-    if (await fs.pathExists(authModulePath)) {
-      errors.push('auth/ directory already exists (use --force to overwrite)');
-    }
+    const authExists = await fs.pathExists(authModulePath);
 
     return {
+      authExists,
       root,
       sourceRoot,
       appModulePath,
