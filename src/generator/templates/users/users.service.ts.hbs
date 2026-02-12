@@ -56,8 +56,15 @@ export class UsersService {
    */
   async findAll(): Promise<User[]> {
     return await this.usersRepository.find({
-      select: ['id', 'email'{{#if rbac.enabled}}, 'roles'{{/if}}, 'createdAt'],
+      select: ['id', 'email'{{#if features.useUsername}}, 'username'{{/if}}{{#if rbac.enabled}}, 'roles'{{/if}}, 'createdAt'],
     });
+  }
+
+  /**
+   * Update user password
+   */
+  async updatePassword(id: string, hashedPassword: string): Promise<void> {
+    await this.usersRepository.update(id, { password: hashedPassword });
   }
 {{else if (eq orm "prisma")}}
   constructor(private prisma: PrismaService) {}
@@ -105,11 +112,24 @@ export class UsersService {
       select: {
         id: true,
         email: true,
+{{#if features.useUsername}}
+        username: true,
+{{/if}}
 {{#if rbac.enabled}}
         roles: true,
 {{/if}}
         createdAt: true,
       },
+    });
+  }
+
+  /**
+   * Update user password
+   */
+  async updatePassword(id: string, hashedPassword: string): Promise<void> {
+    await this.prisma.user.update({
+      where: { id },
+      data: { password: hashedPassword },
     });
   }
 {{else}}
@@ -142,6 +162,14 @@ export class UsersService {
    * TODO: Implement with your ORM
    */
   async findAll(): Promise<any[]> {
+    throw new Error('Not implemented');
+  }
+
+  /**
+   * Update user password
+   * TODO: Implement with your ORM
+   */
+  async updatePassword(id: string, hashedPassword: string): Promise<void> {
     throw new Error('Not implemented');
   }
 {{/if}}

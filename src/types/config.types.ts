@@ -15,6 +15,8 @@ export interface FeaturesConfig {
   refreshTokens: boolean;
   rateLimiting: boolean;
   swagger?: boolean;
+  unitTests?: boolean;
+  useUsername?: boolean;
   emailVerification?: boolean;
   twoFactor?: boolean;
 }

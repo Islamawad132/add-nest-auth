@@ -112,7 +112,7 @@ export class PackageUpdater {
 
     // Add Swagger dependency
     if (config.features.swagger) {
-      dependencies['@nestjs/swagger'] = '^8.0.0';
+      dependencies['@nestjs/swagger'] = '^11.0.0';
     }
 
     return { dependencies, devDependencies };

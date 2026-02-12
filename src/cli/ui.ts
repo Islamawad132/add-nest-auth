@@ -139,6 +139,7 @@ export function showSuccess(stats: {
   console.log(chalk.cyan('   4. Test authentication endpoints'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/register'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/login'));
+  console.log(chalk.gray('      POST http://localhost:3000/auth/change-password (requires JWT)'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/refresh'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/logout (requires JWT)'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/logout-all (requires JWT)'));

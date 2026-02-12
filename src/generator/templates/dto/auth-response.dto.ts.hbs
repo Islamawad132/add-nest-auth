@@ -17,13 +17,16 @@ export class AuthResponseDto {
 
 {{#if features.swagger}}
   @ApiProperty({
-    example: { id: 'uuid', email: 'user@example.com'{{#if rbac.enabled}}, roles: ['User']{{/if}} },
+    example: { id: 'uuid', email: 'user@example.com'{{#if features.useUsername}}, username: 'john_doe'{{/if}}{{#if rbac.enabled}}, roles: ['User']{{/if}} },
     description: 'User information',
   })
 {{/if}}
   user: {
     id: string;
     email: string;
+{{#if features.useUsername}}
+    username: string;
+{{/if}}
 {{#if rbac.enabled}}
     roles: string[];
 {{/if}}

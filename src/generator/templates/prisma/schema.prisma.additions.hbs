@@ -6,6 +6,9 @@
 model User {
   id        String   @id @default(uuid())
   email     String   @unique
+{{#if features.useUsername}}
+  username  String   @unique
+{{/if}}
   password  String
 {{#if rbac.enabled}}
   roles     String[] @default(["User"])

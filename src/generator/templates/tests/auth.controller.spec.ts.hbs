@@ -1,0 +1,127 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { AuthController } from './auth.controller';
+import { AuthService } from './auth.service';
+
+describe('AuthController', () => {
+  let controller: AuthController;
+  let authService: AuthService;
+
+  const mockAuthService = {
+    login: jest.fn(),
+    register: jest.fn(),
+    changePassword: jest.fn(),
+{{#if features.refreshTokens}}
+    refreshAccessToken: jest.fn(),
+    logout: jest.fn(),
+    logoutAll: jest.fn(),
+{{/if}}
+  };
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      controllers: [AuthController],
+      providers: [
+        { provide: AuthService, useValue: mockAuthService },
+      ],
+    }).compile();
+
+    controller = module.get<AuthController>(AuthController);
+    authService = module.get<AuthService>(AuthService);
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('POST /auth/login', () => {
+    it('should call authService.login and return result', async () => {
+      const loginDto = { email: 'test@example.com', password: 'password123' };
+      const expectedResult = {
+        accessToken: 'mock-token',
+        user: { id: 'uuid', email: 'test@example.com' },
+      };
+      mockAuthService.login.mockResolvedValue(expectedResult);
+
+      const result = await controller.login(loginDto);
+
+      expect(authService.login).toHaveBeenCalledWith(loginDto);
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('POST /auth/register', () => {
+    it('should call authService.register and return result', async () => {
+      const registerDto = {
+        email: 'new@example.com',
+{{#if features.useUsername}}
+        username: 'newuser',
+{{/if}}
+        password: 'StrongP@ss1',
+      };
+      const expectedResult = {
+        accessToken: 'mock-token',
+        user: { id: 'uuid', email: 'new@example.com' },
+      };
+      mockAuthService.register.mockResolvedValue(expectedResult);
+
+      const result = await controller.register(registerDto);
+
+      expect(authService.register).toHaveBeenCalledWith(registerDto);
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('POST /auth/change-password', () => {
+    it('should call authService.changePassword and return success message', async () => {
+      const user = { id: 'test-uuid', email: 'test@example.com' };
+      const changePasswordDto = { currentPassword: 'old', newPassword: 'NewP@ssword1' };
+      mockAuthService.changePassword.mockResolvedValue(undefined);
+
+      const result = await controller.changePassword(user, changePasswordDto);
+
+      expect(authService.changePassword).toHaveBeenCalledWith('test-uuid', changePasswordDto);
+      expect(result).toEqual({ message: 'Password changed successfully' });
+    });
+  });
+
+{{#if features.refreshTokens}}
+  describe('POST /auth/refresh', () => {
+    it('should call authService.refreshAccessToken and return result', async () => {
+      const expectedResult = {
+        accessToken: 'new-token',
+        refreshToken: 'new-refresh-token',
+        user: { id: 'uuid', email: 'test@example.com' },
+      };
+      mockAuthService.refreshAccessToken.mockResolvedValue(expectedResult);
+
+      const result = await controller.refresh('old-refresh-token');
+
+      expect(authService.refreshAccessToken).toHaveBeenCalledWith('old-refresh-token');
+      expect(result).toEqual(expectedResult);
+    });
+  });
+
+  describe('POST /auth/logout', () => {
+    it('should call authService.logout and return success message', async () => {
+      mockAuthService.logout.mockResolvedValue(undefined);
+
+      const result = await controller.logout('refresh-token');
+
+      expect(authService.logout).toHaveBeenCalledWith('refresh-token');
+      expect(result).toEqual({ message: 'Logged out successfully' });
+    });
+  });
+
+  describe('POST /auth/logout-all', () => {
+    it('should call authService.logoutAll and return success message', async () => {
+      const req = { user: { id: 'test-uuid' } };
+      mockAuthService.logoutAll.mockResolvedValue(undefined);
+
+      const result = await controller.logoutAll(req);
+
+      expect(authService.logoutAll).toHaveBeenCalledWith('test-uuid');
+      expect(result).toEqual({ message: 'Logged out from all devices' });
+    });
+  });
+{{/if}}
+});

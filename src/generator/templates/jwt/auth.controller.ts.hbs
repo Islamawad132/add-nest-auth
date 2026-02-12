@@ -1,6 +1,6 @@
 import { Controller, Post, Body, HttpCode, HttpStatus{{#if features.refreshTokens}}, Req{{/if}} } from '@nestjs/common';
 {{#if features.rateLimiting}}
-import { Throttle } from '@nestjs/throttler';
+import { Throttle, SkipThrottle } from '@nestjs/throttler';
 {{/if}}
 {{#if features.swagger}}
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
@@ -8,8 +8,10 @@ import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagg
 import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
+import { ChangePasswordDto } from './dto/change-password.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Public } from './decorators/public.decorator';
+import { CurrentUser } from './decorators/current-user.decorator';
 
 @Controller('auth')
 {{#if features.swagger}}
@@ -47,6 +49,22 @@ export class AuthController {
     return this.authService.register(registerDto);
   }
 
+  @Post('change-password')
+  @HttpCode(HttpStatus.OK)
+{{#if features.swagger}}
+  @ApiBearerAuth()
+  @ApiOperation({ summary: 'Change password' })
+  @ApiResponse({ status: 200, description: 'Password changed successfully' })
+  @ApiResponse({ status: 401, description: 'Invalid current password' })
+{{/if}}
+  async changePassword(
+    @CurrentUser() user: any,
+    @Body() changePasswordDto: ChangePasswordDto,
+  ): Promise<{ message: string }> {
+    await this.authService.changePassword(user.id, changePasswordDto);
+    return { message: 'Password changed successfully' };
+  }
+
 {{#if features.refreshTokens}}
   @Public()
   @Post('refresh')
@@ -60,6 +78,9 @@ export class AuthController {
     return this.authService.refreshAccessToken(refreshToken);
   }
 
+{{#if features.rateLimiting}}
+  @SkipThrottle()
+{{/if}}
   @Post('logout')
   @HttpCode(HttpStatus.OK)
 {{#if features.swagger}}
@@ -73,6 +94,9 @@ export class AuthController {
     return { message: 'Logged out successfully' };
   }
 
+{{#if features.rateLimiting}}
+  @SkipThrottle()
+{{/if}}
   @Post('logout-all')
   @HttpCode(HttpStatus.OK)
 {{#if features.swagger}}

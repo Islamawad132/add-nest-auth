@@ -131,6 +131,7 @@ export class Generator {
     plan.push(
       { template: 'dto/login.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/login.dto.ts` },
       { template: 'dto/register.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/register.dto.ts` },
+      { template: 'dto/change-password.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/change-password.dto.ts` },
       { template: 'dto/auth-response.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/auth-response.dto.ts` },
       { template: 'dto/create-user.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/create-user.dto.ts` }
     );
@@ -159,6 +160,14 @@ export class Generator {
         { template: 'prisma/prisma.service.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.service.ts` },
         { template: 'prisma/prisma.module.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.module.ts` },
         { template: 'prisma/schema.prisma.additions.hbs', output: 'prisma-schema-additions.prisma' },
+      );
+    }
+
+    // Unit tests (conditional)
+    if (config.features.unitTests) {
+      plan.push(
+        { template: 'tests/auth.service.spec.ts.hbs', output: `${config.sourceRoot}/auth/auth.service.spec.ts` },
+        { template: 'tests/auth.controller.spec.ts.hbs', output: `${config.sourceRoot}/auth/auth.controller.spec.ts` },
       );
     }
 

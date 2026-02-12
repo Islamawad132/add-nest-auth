@@ -1,0 +1,241 @@
+import { Test, TestingModule } from '@nestjs/testing';
+import { JwtService } from '@nestjs/jwt';
+import { ConfigService } from '@nestjs/config';
+import { UnauthorizedException } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
+import { AuthService } from './auth.service';
+import { UsersService } from '../users/users.service';
+{{#if (eq orm "typeorm")}}
+{{#if features.refreshTokens}}
+import { getRepositoryToken } from '@nestjs/typeorm';
+import { RefreshToken } from '../users/entities/refresh-token.entity';
+{{/if}}
+{{/if}}
+
+describe('AuthService', () => {
+  let authService: AuthService;
+  let usersService: UsersService;
+  let jwtService: JwtService;
+{{#if (eq orm "typeorm")}}
+{{#if features.refreshTokens}}
+  let refreshTokenRepository: any;
+{{/if}}
+{{/if}}
+
+  const mockUser = {
+    id: 'test-uuid',
+    email: 'test@example.com',
+{{#if features.useUsername}}
+    username: 'testuser',
+{{/if}}
+    password: '$2b$10$hashedpassword',
+{{#if rbac.enabled}}
+    roles: ['User'],
+{{/if}}
+  };
+
+  const mockUsersService = {
+    findByEmail: jest.fn(),
+    findById: jest.fn(),
+    create: jest.fn(),
+    updatePassword: jest.fn(),
+  };
+
+  const mockJwtService = {
+    sign: jest.fn().mockReturnValue('mock-jwt-token'),
+    verify: jest.fn(),
+  };
+
+  const mockConfigService = {
+    get: jest.fn((key: string, defaultValue?: string) => {
+      const config: Record<string, string> = {
+        BCRYPT_ROUNDS: '10',
+        JWT_SECRET: 'test-secret',
+      };
+      return config[key] || defaultValue;
+    }),
+  };
+
+{{#if (eq orm "typeorm")}}
+{{#if features.refreshTokens}}
+  const mockRefreshTokenRepository = {
+    create: jest.fn(),
+    save: jest.fn(),
+    findOne: jest.fn(),
+    remove: jest.fn(),
+    delete: jest.fn(),
+  };
+{{/if}}
+{{/if}}
+
+  beforeEach(async () => {
+    const module: TestingModule = await Test.createTestingModule({
+      providers: [
+        AuthService,
+        { provide: UsersService, useValue: mockUsersService },
+        { provide: JwtService, useValue: mockJwtService },
+        { provide: ConfigService, useValue: mockConfigService },
+{{#if (eq orm "typeorm")}}
+{{#if features.refreshTokens}}
+        { provide: getRepositoryToken(RefreshToken), useValue: mockRefreshTokenRepository },
+{{/if}}
+{{/if}}
+      ],
+    }).compile();
+
+    authService = module.get<AuthService>(AuthService);
+    usersService = module.get<UsersService>(UsersService);
+    jwtService = module.get<JwtService>(JwtService);
+{{#if (eq orm "typeorm")}}
+{{#if features.refreshTokens}}
+    refreshTokenRepository = module.get(getRepositoryToken(RefreshToken));
+{{/if}}
+{{/if}}
+  });
+
+  afterEach(() => {
+    jest.clearAllMocks();
+  });
+
+  describe('validateUser', () => {
+    it('should return user without password for valid credentials', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+
+      const result = await authService.validateUser('test@example.com', 'password123');
+
+      expect(result).toBeDefined();
+      expect(result.email).toBe('test@example.com');
+      expect(result.password).toBeUndefined();
+    });
+
+    it('should return null if user not found', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+
+      const result = await authService.validateUser('wrong@example.com', 'password123');
+
+      expect(result).toBeNull();
+    });
+
+    it('should return null if password is invalid', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+
+      const result = await authService.validateUser('test@example.com', 'wrongpassword');
+
+      expect(result).toBeNull();
+    });
+  });
+
+  describe('login', () => {
+    it('should return access token and user for valid credentials', async () => {
+      const userWithoutPassword = { id: mockUser.id, email: mockUser.email{{#if features.useUsername}}, username: mockUser.username{{/if}}{{#if rbac.enabled}}, roles: mockUser.roles{{/if}} };
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+{{#if features.refreshTokens}}
+      mockJwtService.sign.mockReturnValue('mock-jwt-token');
+{{#if (eq orm "typeorm")}}
+      mockRefreshTokenRepository.create.mockReturnValue({ token: 'mock-refresh-token' });
+      mockRefreshTokenRepository.save.mockResolvedValue({ token: 'mock-refresh-token' });
+{{/if}}
+{{/if}}
+
+      const result = await authService.login({ email: 'test@example.com', password: 'password123' });
+
+      expect(result.accessToken).toBeDefined();
+      expect(result.user.email).toBe('test@example.com');
+    });
+
+    it('should throw UnauthorizedException for invalid credentials', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+
+      await expect(
+        authService.login({ email: 'wrong@example.com', password: 'wrongpassword' }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+  describe('register', () => {
+    it('should create user and return access token', async () => {
+      const newUser = { ...mockUser };
+      mockUsersService.create.mockResolvedValue(newUser);
+      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => '$2b$10$hashedpassword');
+{{#if features.refreshTokens}}
+      mockJwtService.sign.mockReturnValue('mock-jwt-token');
+{{#if (eq orm "typeorm")}}
+      mockRefreshTokenRepository.create.mockReturnValue({ token: 'mock-refresh-token' });
+      mockRefreshTokenRepository.save.mockResolvedValue({ token: 'mock-refresh-token' });
+{{/if}}
+{{/if}}
+
+      const result = await authService.register({
+        email: 'new@example.com',
+{{#if features.useUsername}}
+        username: 'newuser',
+{{/if}}
+        password: 'StrongP@ss1',
+      });
+
+      expect(result.accessToken).toBeDefined();
+      expect(result.user.email).toBe('test@example.com');
+      expect(mockUsersService.create).toHaveBeenCalled();
+    });
+  });
+
+  describe('changePassword', () => {
+    it('should update password when current password is valid', async () => {
+      mockUsersService.findById.mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => true);
+      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => '$2b$10$newhashedpassword');
+      mockUsersService.updatePassword.mockResolvedValue(undefined);
+
+      await authService.changePassword('test-uuid', {
+        currentPassword: 'oldpassword',
+        newPassword: 'NewP@ssword1',
+      });
+
+      expect(mockUsersService.updatePassword).toHaveBeenCalledWith('test-uuid', '$2b$10$newhashedpassword');
+    });
+
+    it('should throw UnauthorizedException for wrong current password', async () => {
+      mockUsersService.findById.mockResolvedValue(mockUser);
+      jest.spyOn(bcrypt, 'compare').mockImplementation(async () => false);
+
+      await expect(
+        authService.changePassword('test-uuid', {
+          currentPassword: 'wrongpassword',
+          newPassword: 'NewP@ssword1',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+
+    it('should throw UnauthorizedException if user not found', async () => {
+      mockUsersService.findById.mockResolvedValue(null);
+
+      await expect(
+        authService.changePassword('nonexistent-uuid', {
+          currentPassword: 'oldpassword',
+          newPassword: 'NewP@ssword1',
+        }),
+      ).rejects.toThrow(UnauthorizedException);
+    });
+  });
+
+{{#if features.refreshTokens}}
+  describe('logout', () => {
+    it('should delete the refresh token', async () => {
+{{#if (eq orm "typeorm")}}
+      const storedToken = { id: '1', token: 'refresh-token' };
+      mockRefreshTokenRepository.findOne.mockResolvedValue(storedToken);
+      mockRefreshTokenRepository.remove.mockResolvedValue(undefined);
+{{/if}}
+
+      await authService.logout('refresh-token');
+
+{{#if (eq orm "typeorm")}}
+      expect(mockRefreshTokenRepository.findOne).toHaveBeenCalled();
+{{/if}}
+    });
+  });
+{{/if}}
+});

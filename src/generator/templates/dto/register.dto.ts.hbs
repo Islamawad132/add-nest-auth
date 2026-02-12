@@ -11,6 +11,17 @@ export class RegisterDto {
   @IsNotEmpty()
   email: string;
 
+{{#if features.useUsername}}
+{{#if features.swagger}}
+  @ApiProperty({ example: 'john_doe', description: 'Username (3-20 characters)' })
+{{/if}}
+  @IsString()
+  @IsNotEmpty()
+  @MinLength(3)
+  @MaxLength(20)
+  username: string;
+
+{{/if}}
 {{#if features.swagger}}
   @ApiProperty({ example: 'StrongP@ss1', description: 'User password (8-32 characters)' })
 {{/if}}

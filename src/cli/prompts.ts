@@ -15,6 +15,8 @@ export interface PromptAnswers {
   refreshExpiration: string;
   enableRateLimiting: boolean;
   enableSwagger: boolean;
+  generateTests: boolean;
+  useUsername: boolean;
   useDetectedORM: boolean;
   database: string;
   autoInstall: boolean;
@@ -110,6 +112,18 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
     },
     {
       type: 'confirm',
+      name: 'generateTests',
+      message: 'Generate unit tests? (recommended)',
+      default: true,
+    },
+    {
+      type: 'confirm',
+      name: 'useUsername',
+      message: 'Add username field to user?',
+      default: false,
+    },
+    {
+      type: 'confirm',
       name: 'useDetectedORM',
       message: `Detected ${detectedORM.toUpperCase()}${dbLabel}. Use it?`,
       default: true,
@@ -152,6 +166,8 @@ export function getDefaultAnswers(detectedORM: ORM, detectedDB?: string): Prompt
     refreshExpiration: '7d',
     enableRateLimiting: true,
     enableSwagger: true,
+    generateTests: true,
+    useUsername: false,
     useDetectedORM: true,
     database: detectedDB || 'postgres',
     autoInstall: true,
@@ -182,6 +198,8 @@ export function buildConfig(
       refreshTokens: answers.refreshTokens,
       rateLimiting: answers.enableRateLimiting,
       swagger: answers.enableSwagger,
+      unitTests: answers.generateTests,
+      useUsername: answers.useUsername,
     },
     jwt: {
       secret: generateSecret(),
@@ -190,7 +208,7 @@ export function buildConfig(
     },
     autoInstall: answers.autoInstall,
     timestamp: new Date().toISOString(),
-    generatorVersion: '1.2.0',
+    generatorVersion: '1.3.0',
   };
 
   return config;

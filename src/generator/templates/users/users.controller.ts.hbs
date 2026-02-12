@@ -4,6 +4,9 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 {{/if}}
+{{#if features.rateLimiting}}
+import { SkipThrottle } from '@nestjs/throttler';
+{{/if}}
 {{#if features.swagger}}
 import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
 {{/if}}
@@ -11,6 +14,9 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 
 @Controller('users')
+{{#if features.rateLimiting}}
+@SkipThrottle()
+{{/if}}
 {{#if features.swagger}}
 @ApiTags('Users')
 @ApiBearerAuth()
