@@ -154,12 +154,16 @@ export class AppModuleUpdater {
       throw new Error('imports is not an array');
     }
 
-    // Get existing module names
+    // Get existing module names and their text
     const existingModules = this.getExistingModuleNames(importsArray);
+    const existingElements = importsArray.getElements().map(e => e.getText());
+
+    // Build a list of all elements (existing + new)
+    const allElements: string[] = [...existingElements];
 
     // Add ConfigModule.forRoot() if not exists
     if (!existingModules.has('ConfigModule')) {
-      importsArray.addElement('ConfigModule.forRoot({ isGlobal: true })');
+      allElements.push('ConfigModule.forRoot({ isGlobal: true })');
     }
 
     // Add TypeOrmModule.forRoot() if using TypeORM and not already present
@@ -168,19 +172,26 @@ export class AppModuleUpdater {
         ? '[User, RefreshToken]'
         : '[User]';
 
-      const typeOrmConfig = this.buildTypeOrmConfig(config.database, entities);
-      importsArray.addElement(typeOrmConfig);
+      allElements.push(this.buildTypeOrmConfig(config.database, entities));
     }
 
     // Add AuthModule if not exists
     if (!existingModules.has('AuthModule')) {
-      importsArray.addElement('AuthModule');
+      allElements.push('AuthModule');
     }
 
     // Add UsersModule if not exists
     if (!existingModules.has('UsersModule')) {
-      importsArray.addElement('UsersModule');
+      allElements.push('UsersModule');
     }
+
+    // Build multi-line array string with each element on its own line
+    const indent = '    '; // 4 spaces for array elements inside @Module({})
+    const formattedElements = allElements.map(el => `${indent}${el}`).join(',\n');
+    const multiLineArray = `[\n${formattedElements},\n  ]`;
+
+    // Replace the entire initializer with the formatted multi-line version
+    importsProperty.setInitializer(multiLineArray);
   }
 
   /**
