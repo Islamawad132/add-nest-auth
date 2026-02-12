@@ -13,7 +13,7 @@ process.on('unhandledRejection', (error) => {
 const program = new Command();
 
 program
-  .name('add-nest-auth')
+  .name('nest-authme')
   .description('Add production-ready authentication to any NestJS project')
   .version('1.1.0')
   .option('-y, --yes', 'Skip all prompts and use sensible defaults')

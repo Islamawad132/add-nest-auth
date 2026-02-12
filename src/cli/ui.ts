@@ -23,14 +23,13 @@ function getVersion(): string {
  */
 export function showBanner(): void {
   console.log(chalk.cyan(`
-   ___         _   _       __  __
-  / _ \\       | | | |     |  \\/  |
- / /_\\ \\_   _ | |_| |__   | \\  / | ___
- |  _  | | | || __| '_ \\  | |\\/| |/ _ \\
- | | | | |_| || |_| | | | | |  | |  __/
- \\_| |_/\\__,_| \\__|_| |_| \\_|  |_/\\___|
+     _         _   _     __  __
+    / \\  _   _| |_| |__ |  \\/  | ___
+   / _ \\| | | | __| '_ \\| |\\/| |/ _ \\
+  / ___ \\ |_| | |_| | | | |  | |  __/
+ /_/   \\_\\__,_|\\__|_| |_|_|  |_|\\___|
   `));
-  console.log(chalk.bold(`🔐 NestJS Authentication Module Generator v${getVersion()}`));
+  console.log(chalk.bold(`🔐 AuthMe - NestJS Auth Generator v${getVersion()}`));
   console.log();
 }
 

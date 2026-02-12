@@ -1,10 +1,10 @@
-# add-nest-auth
+# nest-authme
 
 > Add production-ready authentication to any NestJS project in 60 seconds
 
-[![npm version](https://badge.fury.io/js/add-nest-auth.svg)](https://www.npmjs.com/package/add-nest-auth)
+[![npm version](https://badge.fury.io/js/nest-authme.svg)](https://www.npmjs.com/package/nest-authme)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Node](https://img.shields.io/node/v/add-nest-auth.svg)](https://nodejs.org)
+[![Node](https://img.shields.io/node/v/nest-authme.svg)](https://nodejs.org)
 
 Stop writing the same authentication code for every NestJS project. Generate a complete, production-ready auth module with one command.
 
@@ -32,13 +32,13 @@ Stop writing the same authentication code for every NestJS project. Generate a c
 
 ```bash
 cd my-nestjs-app
-npx add-nest-auth
+npx nest-authme
 ```
 
 Follow the interactive prompts, or skip them:
 
 ```bash
-npx add-nest-auth --yes
+npx nest-authme --yes
 ```
 
 ```
@@ -296,7 +296,7 @@ MIT
 
 ## Links
 
-- **npm**: https://www.npmjs.com/package/add-nest-auth
+- **npm**: https://www.npmjs.com/package/nest-authme
 - **GitHub**: https://github.com/Islamawad132/add-nest-auth
 - **Issues**: https://github.com/Islamawad132/add-nest-auth/issues
 

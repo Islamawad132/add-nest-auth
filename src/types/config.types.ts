@@ -1,5 +1,5 @@
 /**
- * Configuration types for the add-nest-auth CLI
+ * Configuration types for the authme CLI
  */
 
 export type AuthStrategy = 'jwt' | 'oauth' | 'session';

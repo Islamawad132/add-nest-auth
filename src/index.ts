@@ -182,6 +182,6 @@ export async function run(cwd: string = process.cwd(), options: RunOptions = {})
   });
 
   console.log('🐛 Issues? https://github.com/Islamawad132/add-nest-auth/issues');
-  console.log('⭐ Like it? https://github.com/Islamawad132/add-nest-auth');
+  console.log('⭐ Like it? https://www.npmjs.com/package/nest-authme');
   console.log();
 }
