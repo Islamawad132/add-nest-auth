@@ -39,6 +39,16 @@ describe('AuthService', () => {
     findById: jest.fn(),
     create: jest.fn(),
     updatePassword: jest.fn(),
+{{#if features.emailVerification}}
+    setVerificationToken: jest.fn(),
+    findByVerificationToken: jest.fn(),
+    markEmailVerified: jest.fn(),
+{{/if}}
+{{#if features.resetPassword}}
+    setResetToken: jest.fn(),
+    findByResetToken: jest.fn(),
+    clearResetToken: jest.fn(),
+{{/if}}
   };
 
   const mockJwtService = {
@@ -220,6 +230,85 @@ describe('AuthService', () => {
       ).rejects.toThrow(UnauthorizedException);
     });
   });
+
+{{#if features.emailVerification}}
+  describe('verifyEmail', () => {
+    it('should verify email with valid token', async () => {
+      mockUsersService.findByVerificationToken.mockResolvedValue(mockUser);
+      mockUsersService.markEmailVerified.mockResolvedValue(undefined);
+
+      const result = await authService.verifyEmail('valid-token');
+
+      expect(result.message).toBe('Email verified successfully');
+      expect(mockUsersService.markEmailVerified).toHaveBeenCalledWith('test-uuid');
+    });
+
+    it('should throw NotFoundException for invalid token', async () => {
+      mockUsersService.findByVerificationToken.mockResolvedValue(null);
+
+      await expect(authService.verifyEmail('invalid-token')).rejects.toThrow();
+    });
+  });
+
+  describe('resendVerification', () => {
+    it('should generate new verification token', async () => {
+      mockUsersService.findByEmail.mockResolvedValue({ ...mockUser, isEmailVerified: false });
+      mockUsersService.setVerificationToken.mockResolvedValue(undefined);
+
+      const result = await authService.resendVerification('test@example.com');
+
+      expect(result.verificationToken).toBeDefined();
+      expect(mockUsersService.setVerificationToken).toHaveBeenCalled();
+    });
+  });
+{{/if}}
+
+{{#if features.resetPassword}}
+  describe('forgotPassword', () => {
+    it('should generate reset token for existing user', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(mockUser);
+      mockUsersService.setResetToken.mockResolvedValue(undefined);
+
+      const result = await authService.forgotPassword({ email: 'test@example.com' });
+
+      expect(result.resetToken).toBeDefined();
+      expect(mockUsersService.setResetToken).toHaveBeenCalled();
+    });
+
+    it('should return success even if user not found (prevent enumeration)', async () => {
+      mockUsersService.findByEmail.mockResolvedValue(null);
+
+      const result = await authService.forgotPassword({ email: 'unknown@example.com' });
+
+      expect(result.message).toBeDefined();
+    });
+  });
+
+  describe('resetPassword', () => {
+    it('should reset password with valid token', async () => {
+      const futureDate = new Date();
+      futureDate.setHours(futureDate.getHours() + 1);
+      mockUsersService.findByResetToken.mockResolvedValue({ ...mockUser, passwordResetExpires: futureDate });
+      jest.spyOn(bcrypt, 'hash').mockImplementation(async () => '$2b$10$newhashedpassword');
+      mockUsersService.updatePassword.mockResolvedValue(undefined);
+      mockUsersService.clearResetToken.mockResolvedValue(undefined);
+
+      const result = await authService.resetPassword({ token: 'valid-token', newPassword: 'NewP@ssword1' });
+
+      expect(result.message).toBe('Password reset successfully');
+      expect(mockUsersService.updatePassword).toHaveBeenCalled();
+      expect(mockUsersService.clearResetToken).toHaveBeenCalled();
+    });
+
+    it('should throw BadRequestException for invalid token', async () => {
+      mockUsersService.findByResetToken.mockResolvedValue(null);
+
+      await expect(
+        authService.resetPassword({ token: 'invalid-token', newPassword: 'NewP@ssword1' }),
+      ).rejects.toThrow();
+    });
+  });
+{{/if}}
 
 {{#if features.refreshTokens}}
   describe('logout', () => {

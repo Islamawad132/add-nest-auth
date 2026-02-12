@@ -18,6 +18,7 @@ export interface FeaturesConfig {
   unitTests?: boolean;
   useUsername?: boolean;
   emailVerification?: boolean;
+  resetPassword?: boolean;
   twoFactor?: boolean;
 }
 

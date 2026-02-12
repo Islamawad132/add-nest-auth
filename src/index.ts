@@ -177,6 +177,8 @@ export async function run(cwd: string = process.cwd(), options: RunOptions = {})
     },
     orm: config.orm,
     swagger: config.features.swagger,
+    emailVerification: config.features.emailVerification,
+    resetPassword: config.features.resetPassword,
   });
 
   console.log('🐛 Issues? https://github.com/Islamawad132/add-nest-auth/issues');

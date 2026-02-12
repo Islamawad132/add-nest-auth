@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus{{#if features.refreshTokens}}, Req{{/if}} } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus{{#if features.refreshTokens}}, Req{{/if}}{{#if features.emailVerification}}, Get, Query{{/if}} } from '@nestjs/common';
 {{#if features.rateLimiting}}
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 {{/if}}
@@ -9,6 +9,10 @@ import { AuthService } from './auth.service';
 import { LoginDto } from './dto/login.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ChangePasswordDto } from './dto/change-password.dto';
+{{#if features.resetPassword}}
+import { ForgotPasswordDto } from './dto/forgot-password.dto';
+import { ResetPasswordDto } from './dto/reset-password.dto';
+{{/if}}
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
@@ -64,6 +68,66 @@ export class AuthController {
     await this.authService.changePassword(user.id, changePasswordDto);
     return { message: 'Password changed successfully' };
   }
+
+{{#if features.emailVerification}}
+  @Public()
+  @Get('verify-email')
+  @HttpCode(HttpStatus.OK)
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Verify email address' })
+  @ApiResponse({ status: 200, description: 'Email verified successfully' })
+  @ApiResponse({ status: 404, description: 'Invalid verification token' })
+{{/if}}
+  async verifyEmail(@Query('token') token: string): Promise<{ message: string }> {
+    return this.authService.verifyEmail(token);
+  }
+
+  @Public()
+  @Post('resend-verification')
+  @HttpCode(HttpStatus.OK)
+{{#if features.rateLimiting}}
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+{{/if}}
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Resend verification email' })
+  @ApiResponse({ status: 200, description: 'Verification token generated' })
+  @ApiResponse({ status: 404, description: 'User not found' })
+{{/if}}
+  async resendVerification(@Body('email') email: string): Promise<{ verificationToken: string; message: string }> {
+    return this.authService.resendVerification(email);
+  }
+{{/if}}
+
+{{#if features.resetPassword}}
+  @Public()
+  @Post('forgot-password')
+  @HttpCode(HttpStatus.OK)
+{{#if features.rateLimiting}}
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+{{/if}}
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Request password reset' })
+  @ApiResponse({ status: 200, description: 'Reset token generated if email exists' })
+{{/if}}
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<{ resetToken: string; message: string }> {
+    return this.authService.forgotPassword(forgotPasswordDto);
+  }
+
+  @Public()
+  @Post('reset-password')
+  @HttpCode(HttpStatus.OK)
+{{#if features.rateLimiting}}
+  @Throttle({ default: { limit: 3, ttl: 60000 } })
+{{/if}}
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Reset password with token' })
+  @ApiResponse({ status: 200, description: 'Password reset successfully' })
+  @ApiResponse({ status: 400, description: 'Invalid or expired reset token' })
+{{/if}}
+  async resetPassword(@Body() resetPasswordDto: ResetPasswordDto): Promise<{ message: string }> {
+    return this.authService.resetPassword(resetPasswordDto);
+  }
+{{/if}}
 
 {{#if features.refreshTokens}}
   @Public()

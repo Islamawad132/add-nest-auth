@@ -136,6 +136,14 @@ export class Generator {
       { template: 'dto/create-user.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/create-user.dto.ts` }
     );
 
+    // Reset password DTOs (conditional)
+    if (config.features.resetPassword) {
+      plan.push(
+        { template: 'dto/forgot-password.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/forgot-password.dto.ts` },
+        { template: 'dto/reset-password.dto.ts.hbs', output: `${config.sourceRoot}/auth/dto/reset-password.dto.ts` }
+      );
+    }
+
     // Users module
     plan.push(
       { template: 'users/users.module.ts.hbs', output: `${config.sourceRoot}/users/users.module.ts` },

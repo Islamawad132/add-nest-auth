@@ -86,6 +86,8 @@ export function showSuccess(stats: {
   jwt: { accessExpiration: string; refreshExpiration?: string };
   orm?: string;
   swagger?: boolean;
+  emailVerification?: boolean;
+  resetPassword?: boolean;
 }): void {
   console.log();
   console.log(chalk.green.bold('🎉 Success!'), 'Authentication module generated.');
@@ -140,6 +142,14 @@ export function showSuccess(stats: {
   console.log(chalk.gray('      POST http://localhost:3000/auth/register'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/login'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/change-password (requires JWT)'));
+  if (stats.emailVerification) {
+    console.log(chalk.gray('      GET  http://localhost:3000/auth/verify-email?token=...'));
+    console.log(chalk.gray('      POST http://localhost:3000/auth/resend-verification'));
+  }
+  if (stats.resetPassword) {
+    console.log(chalk.gray('      POST http://localhost:3000/auth/forgot-password'));
+    console.log(chalk.gray('      POST http://localhost:3000/auth/reset-password'));
+  }
   console.log(chalk.gray('      POST http://localhost:3000/auth/refresh'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/logout (requires JWT)'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/logout-all (requires JWT)'));

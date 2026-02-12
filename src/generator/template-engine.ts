@@ -25,6 +25,8 @@ export class TemplateEngine {
     // Conditional helpers
     this.handlebars.registerHelper('eq', (a, b) => a === b);
     this.handlebars.registerHelper('ne', (a, b) => a !== b);
+    this.handlebars.registerHelper('or', (a, b) => a || b);
+    this.handlebars.registerHelper('and', (a, b) => a && b);
     this.handlebars.registerHelper('includes', (arr, item) => arr?.includes(item));
 
     // String transformation helpers

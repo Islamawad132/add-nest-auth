@@ -13,6 +13,14 @@ model User {
 {{#if rbac.enabled}}
   roles     String[] @default(["User"])
 {{/if}}
+{{#if features.emailVerification}}
+  isEmailVerified        Boolean  @default(false)
+  emailVerificationToken String?
+{{/if}}
+{{#if features.resetPassword}}
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+{{/if}}
 {{#if features.refreshTokens}}
   refreshTokens RefreshToken[]
 {{/if}}

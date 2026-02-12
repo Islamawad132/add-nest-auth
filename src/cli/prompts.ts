@@ -17,6 +17,8 @@ export interface PromptAnswers {
   enableSwagger: boolean;
   generateTests: boolean;
   useUsername: boolean;
+  enableEmailVerification: boolean;
+  enableResetPassword: boolean;
   useDetectedORM: boolean;
   database: string;
   autoInstall: boolean;
@@ -124,6 +126,18 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
     },
     {
       type: 'confirm',
+      name: 'enableEmailVerification',
+      message: 'Enable email verification?',
+      default: false,
+    },
+    {
+      type: 'confirm',
+      name: 'enableResetPassword',
+      message: 'Enable forgot/reset password?',
+      default: true,
+    },
+    {
+      type: 'confirm',
       name: 'useDetectedORM',
       message: `Detected ${detectedORM.toUpperCase()}${dbLabel}. Use it?`,
       default: true,
@@ -168,6 +182,8 @@ export function getDefaultAnswers(detectedORM: ORM, detectedDB?: string): Prompt
     enableSwagger: true,
     generateTests: true,
     useUsername: false,
+    enableEmailVerification: false,
+    enableResetPassword: true,
     useDetectedORM: true,
     database: detectedDB || 'postgres',
     autoInstall: true,
@@ -200,6 +216,8 @@ export function buildConfig(
       swagger: answers.enableSwagger,
       unitTests: answers.generateTests,
       useUsername: answers.useUsername,
+      emailVerification: answers.enableEmailVerification,
+      resetPassword: answers.enableResetPassword,
     },
     jwt: {
       secret: generateSecret(),

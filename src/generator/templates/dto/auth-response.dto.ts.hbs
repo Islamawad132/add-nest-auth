@@ -15,6 +15,14 @@ export class AuthResponseDto {
   refreshToken: string;
 {{/if}}
 
+{{#if features.emailVerification}}
+
+{{#if features.swagger}}
+  @ApiProperty({ example: 'a1b2c3d4...', description: 'Email verification token (only on registration)', required: false })
+{{/if}}
+  verificationToken?: string;
+{{/if}}
+
 {{#if features.swagger}}
   @ApiProperty({
     example: { id: 'uuid', email: 'user@example.com'{{#if features.useUsername}}, username: 'john_doe'{{/if}}{{#if rbac.enabled}}, roles: ['User']{{/if}} },
