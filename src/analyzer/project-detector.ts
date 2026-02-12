@@ -5,7 +5,7 @@
 import * as path from 'path';
 import * as fs from 'fs-extra';
 import { ProjectInfo, PackageJson, NestCliConfig } from '../types/index.js';
-import { detectORM } from './orm-detector.js';
+import { detectORM, detectDatabase } from './orm-detector.js';
 
 export class ProjectDetector {
   constructor(private cwd: string) {}
@@ -54,8 +54,9 @@ export class ProjectDetector {
     // Check main.ts
     const mainTsPath = path.join(root, sourceRoot, 'main.ts');
 
-    // Detect ORM
+    // Detect ORM and database
     const orm = await detectORM(packageJson);
+    const database = detectDatabase(packageJson, orm);
 
     // Check if auth module already exists
     const authModulePath = path.join(root, sourceRoot, 'auth');
@@ -71,6 +72,7 @@ export class ProjectDetector {
       packageJsonPath,
       nestCliConfigPath,
       orm,
+      database,
       nestVersion: packageJson.dependencies?.['@nestjs/core'],
       typescriptVersion: packageJson.devDependencies?.['typescript'],
       isValid: errors.length === 0,

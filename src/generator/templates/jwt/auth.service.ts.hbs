@@ -97,7 +97,7 @@ export class AuthService {
       email: registerDto.email,
       password: hashedPassword,
 {{#if rbac.enabled}}
-      roles: registerDto.roles || ['User'], // Use provided roles or default to User
+      roles: ['User'], // Default role for new users. Admin roles should be assigned by admins only.
 {{/if}}
     });
 

@@ -21,7 +21,11 @@ export interface PromptAnswers {
 /**
  * Ask all configuration questions
  */
-export async function promptConfig(detectedORM: ORM): Promise<PromptAnswers> {
+export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promise<PromptAnswers> {
+  const dbLabel = detectedDB
+    ? ` with ${detectedDB.charAt(0).toUpperCase() + detectedDB.slice(1)}`
+    : '';
+
   const answers = await inquirer.prompt([
     {
       type: 'list',
@@ -93,7 +97,7 @@ export async function promptConfig(detectedORM: ORM): Promise<PromptAnswers> {
     {
       type: 'confirm',
       name: 'useDetectedORM',
-      message: `Detected ${detectedORM.toUpperCase()}${detectedORM === 'typeorm' ? ' with PostgreSQL' : ''}. Use it?`,
+      message: `Detected ${detectedORM.toUpperCase()}${dbLabel}. Use it?`,
       default: true,
       when: () => detectedORM !== 'none',
     },
@@ -128,7 +132,8 @@ export function buildConfig(
   answers: PromptAnswers,
   projectName: string,
   sourceRoot: string,
-  detectedORM: ORM
+  detectedORM: ORM,
+  detectedDB?: string
 ): AuthConfig {
   const config: AuthConfig = {
     projectName,
@@ -139,7 +144,7 @@ export function buildConfig(
       roles: answers.roles || [],
     },
     orm: answers.useDetectedORM !== false ? detectedORM : 'typeorm',
-    database: answers.database || 'postgres',
+    database: answers.database || detectedDB || 'postgres',
     features: {
       refreshTokens: answers.refreshTokens,
     },

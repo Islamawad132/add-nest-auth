@@ -5,6 +5,7 @@
 import { Project, SourceFile, SyntaxKind, Node } from 'ts-morph';
 import * as path from 'path';
 import * as fs from 'fs-extra';
+import { AuthConfig } from '../types/index.js';
 
 export class AppModuleUpdater {
   private project: Project;
@@ -20,7 +21,7 @@ export class AppModuleUpdater {
   /**
    * Update app.module.ts with auth modules
    */
-  async update(): Promise<void> {
+  async update(config?: AuthConfig): Promise<void> {
     // Create backup
     await this.createBackup();
 
@@ -29,10 +30,10 @@ export class AppModuleUpdater {
       this.sourceFile = this.project.addSourceFileAtPath(this.appModulePath);
 
       // Add imports
-      this.addImports();
+      this.addImports(config);
 
       // Add modules to @Module decorator
-      this.addModulesToDecorator();
+      this.addModulesToDecorator(config);
 
       // Save changes
       await this.sourceFile.save();
@@ -46,13 +47,23 @@ export class AppModuleUpdater {
   /**
    * Add necessary imports
    */
-  private addImports(): void {
+  private addImports(config?: AuthConfig): void {
     if (!this.sourceFile) {
       throw new Error('Source file not loaded');
     }
 
     // Add ConfigModule import
     this.addImport('@nestjs/config', ['ConfigModule']);
+
+    // Add TypeOrmModule if using TypeORM
+    if (config && config.orm === 'typeorm') {
+      this.addImport('@nestjs/typeorm', ['TypeOrmModule']);
+      this.addImport('./users/entities/user.entity', ['User']);
+
+      if (config.features.refreshTokens) {
+        this.addImport('./users/entities/refresh-token.entity', ['RefreshToken']);
+      }
+    }
 
     // Add AuthModule import
     this.addImport('./auth/auth.module', ['AuthModule']);
@@ -97,7 +108,7 @@ export class AppModuleUpdater {
   /**
    * Add modules to @Module decorator imports array
    */
-  private addModulesToDecorator(): void {
+  private addModulesToDecorator(config?: AuthConfig): void {
     if (!this.sourceFile) return;
 
     // Find AppModule class
@@ -147,6 +158,16 @@ export class AppModuleUpdater {
       importsArray.addElement('ConfigModule.forRoot({ isGlobal: true })');
     }
 
+    // Add TypeOrmModule.forRoot() if using TypeORM and not already present
+    if (config && config.orm === 'typeorm' && !existingModules.has('TypeOrmModule')) {
+      const entities = config.features.refreshTokens
+        ? '[User, RefreshToken]'
+        : '[User]';
+
+      const typeOrmConfig = this.buildTypeOrmConfig(config.database, entities);
+      importsArray.addElement(typeOrmConfig);
+    }
+
     // Add AuthModule if not exists
     if (!existingModules.has('AuthModule')) {
       importsArray.addElement('AuthModule');
@@ -155,6 +176,21 @@ export class AppModuleUpdater {
     // Add UsersModule if not exists
     if (!existingModules.has('UsersModule')) {
       importsArray.addElement('UsersModule');
+    }
+  }
+
+  /**
+   * Build TypeORM.forRoot() configuration string based on database type
+   */
+  private buildTypeOrmConfig(database: string, entities: string): string {
+    switch (database) {
+      case 'sqlite':
+        return `TypeOrmModule.forRoot({\n      type: 'sqlite',\n      database: 'database.sqlite',\n      entities: ${entities},\n      synchronize: true, // WARNING: disable in production!\n    })`;
+      case 'mysql':
+        return `TypeOrmModule.forRoot({\n      type: 'mysql',\n      host: process.env.DATABASE_HOST || 'localhost',\n      port: parseInt(process.env.DATABASE_PORT || '3306'),\n      username: process.env.DATABASE_USER || 'root',\n      password: process.env.DATABASE_PASSWORD || '',\n      database: process.env.DATABASE_NAME || 'auth_db',\n      entities: ${entities},\n      synchronize: true, // WARNING: disable in production!\n    })`;
+      case 'postgres':
+      default:
+        return `TypeOrmModule.forRoot({\n      type: 'postgres',\n      host: process.env.DATABASE_HOST || 'localhost',\n      port: parseInt(process.env.DATABASE_PORT || '5432'),\n      username: process.env.DATABASE_USER || 'postgres',\n      password: process.env.DATABASE_PASSWORD || 'postgres',\n      database: process.env.DATABASE_NAME || 'auth_db',\n      entities: ${entities},\n      synchronize: true, // WARNING: disable in production!\n    })`;
     }
   }
 

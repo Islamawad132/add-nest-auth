@@ -140,22 +140,22 @@ export class MainTsUpdater {
       listenIndex = statements.length;
     }
 
-    // Build the code to insert
+    // Build the code to insert (no leading spaces - ts-morph handles indentation)
     const codeToInsert = [
       '',
-      '  // Enable global validation pipe',
-      '  app.useGlobalPipes(',
-      '    new ValidationPipe({',
-      '      whitelist: true,',
-      '      forbidNonWhitelisted: true,',
-      '      transform: true,',
-      '    }),',
-      '  );',
+      '// Enable global validation pipe',
+      'app.useGlobalPipes(',
+      '  new ValidationPipe({',
+      '    whitelist: true,',
+      '    forbidNonWhitelisted: true,',
+      '    transform: true,',
+      '  }),',
+      ');',
       '',
-      '  // Enable global JWT guard (all routes protected by default)',
-      '  // Use @Public() decorator on routes that should be accessible without auth',
-      '  const reflector = app.get(Reflector);',
-      '  app.useGlobalGuards(new JwtAuthGuard(reflector));',
+      '// Enable global JWT guard (all routes protected by default)',
+      '// Use @Public() decorator on routes that should be accessible without auth',
+      'const reflector = app.get(Reflector);',
+      'app.useGlobalGuards(new JwtAuthGuard(reflector));',
       '',
     ].join('\n');
 

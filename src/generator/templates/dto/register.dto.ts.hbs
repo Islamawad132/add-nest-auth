@@ -1,4 +1,4 @@
-import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength{{#if rbac.enabled}}, IsArray, IsOptional{{/if}} } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsString, MinLength, MaxLength } from 'class-validator';
 
 export class RegisterDto {
   @IsEmail()
@@ -10,10 +10,4 @@ export class RegisterDto {
   @MinLength(8)
   @MaxLength(32)
   password: string;
-{{#if rbac.enabled}}
-
-  @IsArray()
-  @IsOptional()
-  roles?: string[];
-{{/if}}
 }

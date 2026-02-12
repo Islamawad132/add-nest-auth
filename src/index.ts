@@ -39,14 +39,15 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
   });
 
   // Prompt for configuration
-  const answers = await promptConfig(projectInfo.orm);
+  const answers = await promptConfig(projectInfo.orm, projectInfo.database);
 
   // Build configuration
   const config = buildConfig(
     answers,
     projectInfo.root.split(/[/\\]/).pop() || 'project',
     projectInfo.sourceRoot,
-    projectInfo.orm
+    projectInfo.orm,
+    projectInfo.database
   );
 
   console.log();
@@ -69,13 +70,17 @@ export async function run(cwd: string = process.cwd()): Promise<void> {
 
   genSpinner.succeed(`Generated ${result.filesCreated.length} files`);
 
+  if (result.filesSkipped.length > 0) {
+    console.log(`  ⚠️  Skipped ${result.filesSkipped.length} existing file(s)`);
+  }
+
   // Update app.module.ts with AST
   const astSpinner = createSpinner('Updating app.module.ts...').start();
 
   try {
     const { AppModuleUpdater } = await import('./installer/index.js');
     const astUpdater = new AppModuleUpdater(projectInfo.appModulePath);
-    await astUpdater.update();
+    await astUpdater.update(config);
     await astUpdater.cleanupBackup();
     astSpinner.succeed('Updated app.module.ts');
   } catch (error) {

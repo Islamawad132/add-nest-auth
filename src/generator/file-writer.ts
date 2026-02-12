@@ -12,6 +12,7 @@ export interface WriteOptions {
 
 export class FileWriter {
   private writtenFiles: string[] = [];
+  private skippedFiles: string[] = [];
   private backups: Map<string, string> = new Map();
 
   /**
@@ -27,7 +28,8 @@ export class FileWriter {
     // Check if file exists
     const exists = await fs.pathExists(filePath);
     if (exists && !overwrite) {
-      throw new Error(`File already exists: ${filePath}`);
+      this.skippedFiles.push(filePath);
+      return; // Skip existing files instead of crashing
     }
 
     // Create backup if file exists
@@ -94,5 +96,12 @@ export class FileWriter {
    */
   getWrittenFiles(): string[] {
     return [...this.writtenFiles];
+  }
+
+  /**
+   * Get list of skipped files (already existed)
+   */
+  getSkippedFiles(): string[] {
+    return [...this.skippedFiles];
   }
 }

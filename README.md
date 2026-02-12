@@ -359,9 +359,9 @@ If this tool helped you, please consider:
 
 ## 🔗 Links
 
-- **GitHub**: https://github.com/yourusername/add-nest-auth
+- **GitHub**: https://github.com/Islamawad132/add-nest-auth
 - **npm**: https://www.npmjs.com/package/add-nest-auth
-- **Issues**: https://github.com/yourusername/add-nest-auth/issues
+- **Issues**: https://github.com/Islamawad132/add-nest-auth/issues
 
 ---
 

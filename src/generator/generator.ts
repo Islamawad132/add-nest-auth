@@ -10,6 +10,7 @@ import { buildTemplateContext } from '../config/config-builder.js';
 
 export interface GenerationResult {
   filesCreated: string[];
+  filesSkipped: string[];
   success: boolean;
   error?: string;
 }
@@ -60,14 +61,16 @@ export class Generator {
         });
       }
 
-      // Get list of created files
+      // Get list of created and skipped files
       const filesCreated = this.fileWriter.getWrittenFiles();
+      const filesSkipped = this.fileWriter.getSkippedFiles();
 
       // Cleanup backups
       await this.fileWriter.cleanupBackups();
 
       return {
         filesCreated,
+        filesSkipped,
         success: true,
       };
     } catch (error) {
@@ -76,6 +79,7 @@ export class Generator {
 
       return {
         filesCreated: [],
+        filesSkipped: [],
         success: false,
         error: error instanceof Error ? error.message : 'Unknown error',
       };

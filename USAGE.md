@@ -727,7 +727,7 @@ export class RegisterDto {
 
 ## Getting Help
 
-- **Issues:** https://github.com/yourusername/add-nest-auth/issues
+- **Issues:** https://github.com/Islamawad132/add-nest-auth/issues
 - **Documentation:** See generated `src/auth/README.md`
 - **NestJS Docs:** https://docs.nestjs.com/security/authentication
 
