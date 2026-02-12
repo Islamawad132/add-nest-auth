@@ -14,6 +14,7 @@ export interface PromptAnswers {
   accessExpiration: string;
   refreshExpiration: string;
   enableRateLimiting: boolean;
+  enableSwagger: boolean;
   useDetectedORM: boolean;
   database: string;
   autoInstall: boolean;
@@ -103,6 +104,12 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
     },
     {
       type: 'confirm',
+      name: 'enableSwagger',
+      message: 'Enable Swagger API documentation? (recommended)',
+      default: true,
+    },
+    {
+      type: 'confirm',
       name: 'useDetectedORM',
       message: `Detected ${detectedORM.toUpperCase()}${dbLabel}. Use it?`,
       default: true,
@@ -144,6 +151,7 @@ export function getDefaultAnswers(detectedORM: ORM, detectedDB?: string): Prompt
     accessExpiration: '1h',
     refreshExpiration: '7d',
     enableRateLimiting: true,
+    enableSwagger: true,
     useDetectedORM: true,
     database: detectedDB || 'postgres',
     autoInstall: true,
@@ -168,11 +176,12 @@ export function buildConfig(
       enabled: answers.enableRBAC,
       roles: answers.roles || [],
     },
-    orm: answers.useDetectedORM !== false ? detectedORM : 'typeorm',
+    orm: answers.useDetectedORM !== false ? detectedORM : 'none',
     database: answers.database || detectedDB || 'postgres',
     features: {
       refreshTokens: answers.refreshTokens,
       rateLimiting: answers.enableRateLimiting,
+      swagger: answers.enableSwagger,
     },
     jwt: {
       secret: generateSecret(),
@@ -181,7 +190,7 @@ export function buildConfig(
     },
     autoInstall: answers.autoInstall,
     timestamp: new Date().toISOString(),
-    generatorVersion: '1.1.0',
+    generatorVersion: '1.2.0',
   };
 
   return config;

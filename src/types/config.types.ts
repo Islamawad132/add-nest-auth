@@ -14,6 +14,7 @@ export interface RBACConfig {
 export interface FeaturesConfig {
   refreshTokens: boolean;
   rateLimiting: boolean;
+  swagger?: boolean;
   emailVerification?: boolean;
   twoFactor?: boolean;
 }

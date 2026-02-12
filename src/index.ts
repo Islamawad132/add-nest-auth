@@ -123,7 +123,7 @@ export async function run(cwd: string = process.cwd(), options: RunOptions = {})
   try {
     const { MainTsUpdater } = await import('./installer/index.js');
     const mainUpdater = new MainTsUpdater(projectInfo.mainTsPath);
-    await mainUpdater.update();
+    await mainUpdater.update(config);
     await mainUpdater.cleanupBackup();
     mainSpinner.succeed('Updated main.ts with global JWT guard');
   } catch (error) {
@@ -175,6 +175,8 @@ export async function run(cwd: string = process.cwd(), options: RunOptions = {})
         ? config.jwt.refreshExpiration
         : undefined,
     },
+    orm: config.orm,
+    swagger: config.features.swagger,
   });
 
   console.log('🐛 Issues? https://github.com/Islamawad132/add-nest-auth/issues');

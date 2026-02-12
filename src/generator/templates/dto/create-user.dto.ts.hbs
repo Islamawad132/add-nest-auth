@@ -1,15 +1,27 @@
 import { IsEmail, IsNotEmpty, IsString{{#if rbac.enabled}}, IsArray, IsOptional{{/if}} } from 'class-validator';
+{{#if features.swagger}}
+import { ApiProperty } from '@nestjs/swagger';
+{{/if}}
 
 export class CreateUserDto {
+{{#if features.swagger}}
+  @ApiProperty({ example: 'user@example.com', description: 'User email address' })
+{{/if}}
   @IsEmail()
   @IsNotEmpty()
   email: string;
 
+{{#if features.swagger}}
+  @ApiProperty({ description: 'Hashed password' })
+{{/if}}
   @IsString()
   @IsNotEmpty()
   password: string;
 
 {{#if rbac.enabled}}
+{{#if features.swagger}}
+  @ApiProperty({ example: ['User'], description: 'User roles', required: false })
+{{/if}}
   @IsArray()
   @IsOptional()
   roles?: string[];

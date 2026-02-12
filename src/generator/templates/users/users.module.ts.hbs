@@ -5,6 +5,8 @@ import { User } from './entities/user.entity';
 {{#if features.refreshTokens}}
 import { RefreshToken } from './entities/refresh-token.entity';
 {{/if}}
+{{else if (eq orm "prisma")}}
+import { PrismaModule } from '../prisma/prisma.module';
 {{/if}}
 import { UsersService } from './users.service';
 import { UsersController } from './users.controller';
@@ -19,6 +21,8 @@ import { UsersController } from './users.controller';
 {{/if}}
     ]),
   ],
+{{else if (eq orm "prisma")}}
+  imports: [PrismaModule],
 {{/if}}
   controllers: [UsersController],
   providers: [UsersService],

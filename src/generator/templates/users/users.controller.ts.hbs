@@ -4,10 +4,17 @@ import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { Roles } from '../auth/decorators/roles.decorator';
 {{/if}}
+{{#if features.swagger}}
+import { ApiTags, ApiOperation, ApiResponse, ApiBearerAuth } from '@nestjs/swagger';
+{{/if}}
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import { UsersService } from './users.service';
 
 @Controller('users')
+{{#if features.swagger}}
+@ApiTags('Users')
+@ApiBearerAuth()
+{{/if}}
 {{#if rbac.enabled}}
 @UseGuards(JwtAuthGuard, RolesGuard)
 {{else}}
@@ -17,6 +24,11 @@ export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
   @Get('profile')
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Get current user profile' })
+  @ApiResponse({ status: 200, description: 'User profile returned' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+{{/if}}
   getProfile(@CurrentUser() user: any) {
     return user;
   }
@@ -24,6 +36,12 @@ export class UsersController {
 {{#if rbac.enabled}}
   @Get()
   @Roles('Admin')
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Get all users (Admin only)' })
+  @ApiResponse({ status: 200, description: 'List of users returned' })
+  @ApiResponse({ status: 401, description: 'Unauthorized' })
+  @ApiResponse({ status: 403, description: 'Forbidden - Admin role required' })
+{{/if}}
   findAll() {
     return this.usersService.findAll();
   }

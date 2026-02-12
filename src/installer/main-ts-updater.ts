@@ -1,11 +1,12 @@
 /**
  * AST-based main.ts updater using ts-morph
- * Adds Global JWT Guard and ValidationPipe to the NestJS bootstrap function
+ * Adds Global JWT Guard, ValidationPipe, and optionally Swagger to the NestJS bootstrap function
  */
 
 import { Project, SourceFile, SyntaxKind, Node, IndentationText } from 'ts-morph';
 import * as path from 'path';
 import * as fs from 'fs-extra';
+import { AuthConfig } from '../types/index.js';
 
 export class MainTsUpdater {
   private project: Project;
@@ -22,9 +23,9 @@ export class MainTsUpdater {
   }
 
   /**
-   * Update main.ts with global guards and validation pipe
+   * Update main.ts with global guards, validation pipe, and optionally Swagger
    */
-  async update(): Promise<void> {
+  async update(config?: AuthConfig): Promise<void> {
     // Check if main.ts exists
     if (!await fs.pathExists(this.mainTsPath)) {
       throw new Error(`main.ts not found at ${this.mainTsPath}`);
@@ -38,10 +39,10 @@ export class MainTsUpdater {
       this.sourceFile = this.project.addSourceFileAtPath(this.mainTsPath);
 
       // Add imports
-      this.addImports();
+      this.addImports(config);
 
       // Add global guards and pipes to bootstrap function
-      this.addGlobalGuardsAndPipes();
+      this.addGlobalGuardsAndPipes(config);
 
       // Format and save
       this.sourceFile.formatText();
@@ -56,7 +57,7 @@ export class MainTsUpdater {
   /**
    * Add necessary imports
    */
-  private addImports(): void {
+  private addImports(config?: AuthConfig): void {
     if (!this.sourceFile) {
       throw new Error('Source file not loaded');
     }
@@ -69,6 +70,11 @@ export class MainTsUpdater {
 
     // Add JwtAuthGuard import
     this.addImport('./auth/guards/jwt-auth.guard', ['JwtAuthGuard']);
+
+    // Add Swagger imports if enabled
+    if (config?.features?.swagger) {
+      this.addImport('@nestjs/swagger', ['SwaggerModule', 'DocumentBuilder']);
+    }
   }
 
   /**
@@ -107,7 +113,7 @@ export class MainTsUpdater {
   /**
    * Add global guards and validation pipe to bootstrap function
    */
-  private addGlobalGuardsAndPipes(): void {
+  private addGlobalGuardsAndPipes(config?: AuthConfig): void {
     if (!this.sourceFile) return;
 
     // Find the bootstrap function
@@ -144,8 +150,8 @@ export class MainTsUpdater {
       listenIndex = statements.length;
     }
 
-    // Build the code to insert (no leading spaces - ts-morph handles indentation)
-    const codeToInsert = [
+    // Build the code to insert
+    const codeLines = [
       '',
       '// Enable global validation pipe',
       'app.useGlobalPipes(',
@@ -160,8 +166,27 @@ export class MainTsUpdater {
       '// Use @Public() decorator on routes that should be accessible without auth',
       'const reflector = app.get(Reflector);',
       'app.useGlobalGuards(new JwtAuthGuard(reflector));',
-      '',
-    ].join('\n');
+    ];
+
+    // Add Swagger setup if enabled
+    if (config?.features?.swagger) {
+      codeLines.push(
+        '',
+        '// Swagger API documentation',
+        'const swaggerConfig = new DocumentBuilder()',
+        "  .setTitle('API Documentation')",
+        "  .setDescription('JWT Authentication API')",
+        "  .setVersion('1.0')",
+        '  .addBearerAuth()',
+        '  .build();',
+        'const document = SwaggerModule.createDocument(app, swaggerConfig);',
+        "SwaggerModule.setup('api', app, document);",
+      );
+    }
+
+    codeLines.push('');
+
+    const codeToInsert = codeLines.join('\n');
 
     // Insert at the correct position
     body.insertStatements(listenIndex, codeToInsert);

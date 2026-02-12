@@ -99,9 +99,20 @@ export class PackageUpdater {
       }
     }
 
+    // Add Prisma dependencies if needed
+    if (config.orm === 'prisma') {
+      dependencies['@prisma/client'] = '^6.0.0';
+      devDependencies['prisma'] = '^6.0.0';
+    }
+
     // Add rate limiting dependency
     if (config.features.rateLimiting) {
       dependencies['@nestjs/throttler'] = '^6.0.0';
+    }
+
+    // Add Swagger dependency
+    if (config.features.swagger) {
+      dependencies['@nestjs/swagger'] = '^8.0.0';
     }
 
     return { dependencies, devDependencies };

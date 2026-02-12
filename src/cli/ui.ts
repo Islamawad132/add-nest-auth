@@ -84,6 +84,8 @@ export function showSuccess(stats: {
   filesCreated: number;
   dependenciesAdded: number;
   jwt: { accessExpiration: string; refreshExpiration?: string };
+  orm?: string;
+  swagger?: boolean;
 }): void {
   console.log();
   console.log(chalk.green.bold('🎉 Success!'), 'Authentication module generated.');
@@ -99,7 +101,12 @@ export function showSuccess(stats: {
   console.log(`   • @nestjs/jwt, @nestjs/passport, @nestjs/config`);
   console.log(`   • passport, passport-jwt, passport-local`);
   console.log(`   • bcrypt, class-validator, class-transformer`);
-  console.log(`   • ${stats.dependenciesAdded} packages total`);
+  if (stats.orm === 'prisma') {
+    console.log(`   • @prisma/client, prisma`);
+  }
+  if (stats.swagger) {
+    console.log(`   • @nestjs/swagger`);
+  }
   console.log();
 
   console.log(chalk.bold('🔐 JWT Configuration:'));
@@ -114,9 +121,17 @@ export function showSuccess(stats: {
   console.log(chalk.cyan('   1. Review .env file (auto-generated with secure secret)'));
   console.log(chalk.gray('      # .env.example is also provided as a git-safe reference'));
   console.log();
-  console.log(chalk.cyan('   2. Create database migration (if using TypeORM)'));
-  console.log(chalk.gray('      npm run migration:generate -- src/migrations/CreateUserTable'));
-  console.log(chalk.gray('      npm run migration:run'));
+
+  if (stats.orm === 'prisma') {
+    console.log(chalk.cyan('   2. Add Prisma schema models (see prisma-schema-additions.prisma)'));
+    console.log(chalk.gray('      # Copy the models into your prisma/schema.prisma'));
+    console.log(chalk.gray('      npx prisma migrate dev --name add-auth-models'));
+    console.log(chalk.gray('      npx prisma generate'));
+  } else {
+    console.log(chalk.cyan('   2. Create database migration (if using TypeORM)'));
+    console.log(chalk.gray('      npm run migration:generate -- src/migrations/CreateUserTable'));
+    console.log(chalk.gray('      npm run migration:run'));
+  }
   console.log();
   console.log(chalk.cyan('   3. Start your NestJS app'));
   console.log(chalk.gray('      npm run start:dev'));
@@ -128,6 +143,11 @@ export function showSuccess(stats: {
   console.log(chalk.gray('      POST http://localhost:3000/auth/logout (requires JWT)'));
   console.log(chalk.gray('      POST http://localhost:3000/auth/logout-all (requires JWT)'));
   console.log(chalk.gray('      GET  http://localhost:3000/users/profile (requires JWT)'));
+  if (stats.swagger) {
+    console.log();
+    console.log(chalk.cyan('   5. View Swagger API documentation'));
+    console.log(chalk.gray('      http://localhost:3000/api'));
+  }
   console.log();
 
   console.log(chalk.bold('📖 Full documentation:'), 'src/auth/README.md');
@@ -137,6 +157,9 @@ export function showSuccess(stats: {
   console.log('   • Use @Public() decorator for routes that don\'t require auth');
   console.log('   • Use @Roles(\'Admin\') to restrict routes by role');
   console.log('   • Access current user with @CurrentUser() decorator');
+  if (stats.swagger) {
+    console.log('   • Visit /api for interactive Swagger documentation');
+  }
   console.log();
 }
 

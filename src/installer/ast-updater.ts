@@ -59,7 +59,7 @@ export class AppModuleUpdater {
     // Add ConfigModule import
     this.addImport('@nestjs/config', ['ConfigModule']);
 
-    // Add TypeOrmModule if using TypeORM
+    // Add ORM-specific imports
     if (config && config.orm === 'typeorm') {
       this.addImport('@nestjs/typeorm', ['TypeOrmModule']);
       this.addImport('./users/entities/user.entity', ['User']);
@@ -67,6 +67,8 @@ export class AppModuleUpdater {
       if (config.features.refreshTokens) {
         this.addImport('./users/entities/refresh-token.entity', ['RefreshToken']);
       }
+    } else if (config && config.orm === 'prisma') {
+      this.addImport('./prisma/prisma.module', ['PrismaModule']);
     }
 
     // Add AuthModule import
@@ -166,13 +168,15 @@ export class AppModuleUpdater {
       allElements.push('ConfigModule.forRoot({ isGlobal: true })');
     }
 
-    // Add TypeOrmModule.forRoot() if using TypeORM and not already present
+    // Add ORM module if not already present
     if (config && config.orm === 'typeorm' && !existingModules.has('TypeOrmModule')) {
       const entities = config.features.refreshTokens
         ? '[User, RefreshToken]'
         : '[User]';
 
       allElements.push(this.buildTypeOrmConfig(config.database, entities));
+    } else if (config && config.orm === 'prisma' && !existingModules.has('PrismaModule')) {
+      allElements.push('PrismaModule');
     }
 
     // Add AuthModule if not exists

@@ -142,7 +142,7 @@ export class Generator {
       { template: 'users/users.controller.ts.hbs', output: `${config.sourceRoot}/users/users.controller.ts` }
     );
 
-    // Entities (conditional based on ORM)
+    // Entities / ORM-specific files
     if (config.orm === 'typeorm') {
       plan.push(
         { template: 'entities/user.entity.typeorm.hbs', output: `${config.sourceRoot}/users/entities/user.entity.ts` }
@@ -154,6 +154,12 @@ export class Generator {
           output: `${config.sourceRoot}/users/entities/refresh-token.entity.ts`,
         });
       }
+    } else if (config.orm === 'prisma') {
+      plan.push(
+        { template: 'prisma/prisma.service.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.service.ts` },
+        { template: 'prisma/prisma.module.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.module.ts` },
+        { template: 'prisma/schema.prisma.additions.hbs', output: 'prisma-schema-additions.prisma' },
+      );
     }
 
     // Configuration files

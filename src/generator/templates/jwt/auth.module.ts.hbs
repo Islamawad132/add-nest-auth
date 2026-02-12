@@ -9,6 +9,9 @@ import { APP_GUARD } from '@nestjs/core';
 {{#if (eq orm "typeorm")}}
 import { TypeOrmModule } from '@nestjs/typeorm';
 {{/if}}
+{{#if (eq orm "prisma")}}
+import { PrismaService } from '../prisma/prisma.service';
+{{/if}}
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -61,6 +64,11 @@ import { RefreshToken } from '../users/entities/refresh-token.entity';
     AuthService,
     JwtStrategy,
     LocalStrategy,
+{{#if (eq orm "prisma")}}
+{{#if features.refreshTokens}}
+    PrismaService,
+{{/if}}
+{{/if}}
 {{#if features.rateLimiting}}
     {
       provide: APP_GUARD,

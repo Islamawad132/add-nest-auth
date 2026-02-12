@@ -1,7 +1,25 @@
+{{#if features.swagger}}
+import { ApiProperty } from '@nestjs/swagger';
+
+{{/if}}
 export class AuthResponseDto {
+{{#if features.swagger}}
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIs...', description: 'JWT access token' })
+{{/if}}
   accessToken: string;
 {{#if features.refreshTokens}}
+
+{{#if features.swagger}}
+  @ApiProperty({ example: 'eyJhbGciOiJIUzI1NiIs...', description: 'JWT refresh token' })
+{{/if}}
   refreshToken: string;
+{{/if}}
+
+{{#if features.swagger}}
+  @ApiProperty({
+    example: { id: 'uuid', email: 'user@example.com'{{#if rbac.enabled}}, roles: ['User']{{/if}} },
+    description: 'User information',
+  })
 {{/if}}
   user: {
     id: string;

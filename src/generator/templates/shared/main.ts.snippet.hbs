@@ -5,6 +5,9 @@ import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { JwtAuthGuard } from './auth/guards/jwt-auth.guard';
 import { ValidationPipe } from '@nestjs/common';
+{{#if features.swagger}}
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+{{/if}}
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -22,10 +25,25 @@ async function bootstrap() {
   const reflector = app.get(Reflector);
   app.useGlobalGuards(new JwtAuthGuard(reflector));
 
+{{#if features.swagger}}
+  // Swagger API documentation
+  const swaggerConfig = new DocumentBuilder()
+    .setTitle('API Documentation')
+    .setDescription('JWT Authentication API')
+    .setVersion('1.0')
+    .addBearerAuth()
+    .build();
+  const document = SwaggerModule.createDocument(app, swaggerConfig);
+  SwaggerModule.setup('api', app, document);
+
+{{/if}}
   // Enable CORS if needed
   app.enableCors();
 
   await app.listen(3000);
   console.log('🚀 Application is running on: http://localhost:3000');
+{{#if features.swagger}}
+  console.log('📚 Swagger docs: http://localhost:3000/api');
+{{/if}}
 }
 bootstrap();

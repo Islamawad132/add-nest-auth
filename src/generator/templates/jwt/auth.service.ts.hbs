@@ -5,6 +5,9 @@ import { ConfigService } from '@nestjs/config';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 {{/if}}
+{{#if (eq orm "prisma")}}
+import { PrismaService } from '../prisma/prisma.service';
+{{/if}}
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
 {{#if (eq orm "typeorm")}}
@@ -27,6 +30,11 @@ export class AuthService {
 {{#if features.refreshTokens}}
     @InjectRepository(RefreshToken)
     private refreshTokenRepository: Repository<RefreshToken>,
+{{/if}}
+{{/if}}
+{{#if (eq orm "prisma")}}
+{{#if features.refreshTokens}}
+    private prisma: PrismaService,
 {{/if}}
 {{/if}}
   ) {}
@@ -139,16 +147,16 @@ export class AuthService {
   /**
    * Create a refresh token
    */
-  private async createRefreshToken(userId: string): Promise<RefreshToken> {
+  private async createRefreshToken(userId: string): Promise<any> {
     const token = this.jwtService.sign(
       { sub: userId },
       { expiresIn: '{{jwt.refreshExpiration}}' }
     );
 
-{{#if (eq orm "typeorm")}}
     const expiresAt = new Date();
     expiresAt.setDate(expiresAt.getDate() + 7); // 7 days
 
+{{#if (eq orm "typeorm")}}
     const refreshToken = this.refreshTokenRepository.create({
       token,
       userId,
@@ -156,9 +164,17 @@ export class AuthService {
     });
 
     return await this.refreshTokenRepository.save(refreshToken);
+{{else if (eq orm "prisma")}}
+    return await this.prisma.refreshToken.create({
+      data: {
+        token,
+        userId,
+        expiresAt,
+      },
+    });
 {{else}}
     // TODO: Implement refresh token storage for your ORM
-    return { token, userId, expiresAt: new Date() } as any;
+    return { token, userId, expiresAt } as any;
 {{/if}}
   }
 
@@ -180,6 +196,19 @@ export class AuthService {
 
       // Delete the old refresh token (one-time use)
       await this.refreshTokenRepository.remove(storedToken);
+{{else if (eq orm "prisma")}}
+      const storedToken = await this.prisma.refreshToken.findUnique({
+        where: { token: refreshToken },
+      });
+
+      if (!storedToken || storedToken.expiresAt < new Date()) {
+        throw new UnauthorizedException('Invalid refresh token');
+      }
+
+      // Delete the old refresh token (one-time use)
+      await this.prisma.refreshToken.delete({
+        where: { id: storedToken.id },
+      });
 {{/if}}
 
       const user = await this.usersService.findById(payload.sub);
@@ -224,6 +253,10 @@ export class AuthService {
     if (storedToken) {
       await this.refreshTokenRepository.remove(storedToken);
     }
+{{else if (eq orm "prisma")}}
+    await this.prisma.refreshToken.deleteMany({
+      where: { token: refreshToken },
+    });
 {{else}}
     // TODO: Implement refresh token deletion for your ORM
 {{/if}}
@@ -235,6 +268,10 @@ export class AuthService {
   async logoutAll(userId: string): Promise<void> {
 {{#if (eq orm "typeorm")}}
     await this.refreshTokenRepository.delete({ userId });
+{{else if (eq orm "prisma")}}
+    await this.prisma.refreshToken.deleteMany({
+      where: { userId },
+    });
 {{else}}
     // TODO: Implement all refresh token deletion for your ORM
 {{/if}}
