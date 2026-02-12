@@ -1,6 +1,6 @@
 # add-nest-auth
 
-> Add production-ready authentication to any NestJS project in 60 seconds ⚡
+> Add production-ready authentication to any NestJS project in 60 seconds
 
 [![npm version](https://badge.fury.io/js/add-nest-auth.svg)](https://www.npmjs.com/package/add-nest-auth)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
@@ -10,164 +10,193 @@ Stop writing the same authentication code for every NestJS project. Generate a c
 
 ---
 
-## ✨ Features
+## Features
 
-- 🚀 **60-second setup** - Complete auth module with one command
-- 🔐 **JWT Authentication** - Passport.js + access/refresh tokens
-- 👥 **RBAC Support** - Role-based access control (optional)
-- 🔄 **Token Rotation** - Secure refresh token implementation
-- 🎨 **Custom Decorators** - `@Public()`, `@CurrentUser()`, `@Roles()`
-- 💾 **TypeORM Integration** - Auto-detect and generate entities
-- 🛡️ **Security Best Practices** - bcrypt, class-validator, secure defaults
-- 📦 **Zero Config** - Beautiful interactive CLI
-- 🎯 **Type Safe** - Full TypeScript support
-- ✅ **Production Ready** - Battle-tested patterns
+- **JWT Authentication** - Passport.js with access + refresh token rotation
+- **Prisma & TypeORM** - Auto-detects your ORM and generates matching code
+- **RBAC** - Role-based access control with `@Roles()` decorator
+- **Change Password** - Secure password change with current password verification
+- **Forgot / Reset Password** - Token-based password reset flow
+- **Email Verification** - Token-based email verification flow
+- **Username Support** - Optional username field on user entity
+- **Rate Limiting** - `@nestjs/throttler` on auth endpoints, `@SkipThrottle()` on protected routes
+- **Swagger / OpenAPI** - Full API documentation with `@nestjs/swagger` decorators
+- **Unit Tests** - Generated Jest tests for AuthService and AuthController
+- **Custom Decorators** - `@Public()`, `@CurrentUser()`, `@Roles()`
+- **Security Best Practices** - bcrypt, class-validator, secure defaults, crypto-random secrets
+- **`--yes` Flag** - Skip prompts with sensible defaults
 
 ---
 
-## 🚀 Quick Start
-
-### 1. Run the CLI
-
-Navigate to your NestJS project and run:
+## Quick Start
 
 ```bash
 cd my-nestjs-app
 npx add-nest-auth
 ```
 
-### 2. Follow Interactive Prompts
+Follow the interactive prompts, or skip them:
+
+```bash
+npx add-nest-auth --yes
+```
 
 ```
-🔐 NestJS Authentication Module Generator v1.0.0
+🔐 NestJS Authentication Module Generator v1.3.2
 
 ✓ Detected NestJS 11.0.1
+✓ Found TypeORM
 ✓ Source directory: src/
 
 ? Choose authentication strategy: JWT Authentication
 ? Enable RBAC? Yes
 ? Select roles: Admin, User
 ? Enable refresh tokens? Yes
-? JWT expiration: 1 hour
+? JWT Access Token expiration: 1 hour
+? Refresh Token expiration: 7 days
+? Enable rate limiting? Yes
+? Enable Swagger API documentation? Yes
+? Generate unit tests? Yes
+? Add username field? No
+? Enable email verification? No
+? Enable forgot/reset password? Yes
 ? Auto-install dependencies? Yes
-
-⚙️  Generating authentication module...
-
-✓ Generated 21 files
-✓ Updated app.module.ts
-✓ Updated package.json
-✓ Dependencies installed
 
 🎉 Success! Authentication module generated.
 ```
 
-### 3. Configure & Start
+Then start your app:
 
 ```bash
-# Copy environment variables
-cp .env.example .env
-
-# Run database migrations (TypeORM)
-npm run migration:generate -- src/migrations/CreateAuthTables
-npm run migration:run
-
-# Start your app
 npm run start:dev
 ```
 
-### 4. Test It Out
+---
 
-```bash
-# Register a user
-curl -X POST http://localhost:3000/auth/register \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"Password123!"}'
+## API Endpoints
 
-# Login
-curl -X POST http://localhost:3000/auth/login \
-  -H "Content-Type: application/json" \
-  -d '{"email":"user@example.com","password":"Password123!"}'
+| Method | Endpoint | Auth | Description |
+|--------|----------|------|-------------|
+| `POST` | `/auth/register` | Public | Register a new user |
+| `POST` | `/auth/login` | Public | Login and get tokens |
+| `POST` | `/auth/change-password` | JWT | Change password |
+| `POST` | `/auth/forgot-password` | Public | Request password reset token |
+| `POST` | `/auth/reset-password` | Public | Reset password with token |
+| `GET` | `/auth/verify-email?token=...` | Public | Verify email address |
+| `POST` | `/auth/resend-verification` | Public | Resend verification token |
+| `POST` | `/auth/refresh` | Public | Refresh access token |
+| `POST` | `/auth/logout` | JWT | Invalidate refresh token |
+| `POST` | `/auth/logout-all` | JWT | Invalidate all refresh tokens |
+| `GET` | `/users/profile` | JWT | Get current user profile |
+| `GET` | `/users` | JWT + Admin | List all users |
 
-# Access protected route
-curl http://localhost:3000/users/profile \
-  -H "Authorization: Bearer <your-access-token>"
-```
-
-**That's it!** 🎉
+> Endpoints are conditionally generated based on your selected features.
 
 ---
 
-## 📦 What Gets Generated
-
-### File Structure (21 Files)
+## What Gets Generated
 
 ```
 src/
 ├── auth/
-│   ├── auth.module.ts              # Module configuration
-│   ├── auth.service.ts             # Business logic
-│   ├── auth.controller.ts          # REST endpoints
+│   ├── auth.module.ts
+│   ├── auth.service.ts
+│   ├── auth.service.spec.ts          # (if unit tests enabled)
+│   ├── auth.controller.ts
+│   ├── auth.controller.spec.ts       # (if unit tests enabled)
 │   ├── strategies/
-│   │   ├── jwt.strategy.ts         # JWT validation
-│   │   └── local.strategy.ts       # Login validation
+│   │   ├── jwt.strategy.ts
+│   │   └── local.strategy.ts
 │   ├── guards/
-│   │   ├── jwt-auth.guard.ts       # Protect routes
-│   │   ├── local-auth.guard.ts     # Login guard
-│   │   └── roles.guard.ts          # RBAC guard
+│   │   ├── jwt-auth.guard.ts
+│   │   ├── local-auth.guard.ts
+│   │   └── roles.guard.ts           # (if RBAC enabled)
 │   ├── decorators/
-│   │   ├── public.decorator.ts     # @Public()
-│   │   ├── current-user.decorator.ts # @CurrentUser()
-│   │   └── roles.decorator.ts      # @Roles()
+│   │   ├── public.decorator.ts
+│   │   ├── current-user.decorator.ts
+│   │   └── roles.decorator.ts       # (if RBAC enabled)
 │   ├── dto/
-│   │   ├── login.dto.ts            # Login validation
-│   │   ├── register.dto.ts         # Register validation
-│   │   ├── auth-response.dto.ts    # Response shape
-│   │   └── create-user.dto.ts      # User creation
+│   │   ├── login.dto.ts
+│   │   ├── register.dto.ts
+│   │   ├── change-password.dto.ts
+│   │   ├── forgot-password.dto.ts    # (if reset password enabled)
+│   │   ├── reset-password.dto.ts     # (if reset password enabled)
+│   │   ├── auth-response.dto.ts
+│   │   └── create-user.dto.ts
 │   ├── enums/
-│   │   └── role.enum.ts            # Role definitions
-│   └── README.md                   # Usage guide
+│   │   └── role.enum.ts             # (if RBAC enabled)
+│   └── README.md
 ├── users/
 │   ├── users.module.ts
 │   ├── users.service.ts
 │   ├── users.controller.ts
 │   └── entities/
-│       ├── user.entity.ts          # User model
-│       └── refresh-token.entity.ts # Refresh tokens
-└── app.module.ts                   # ✏️ Updated
+│       ├── user.entity.ts           # (TypeORM)
+│       └── refresh-token.entity.ts  # (TypeORM + refresh tokens)
+├── prisma/                           # (Prisma only)
+│   ├── prisma.service.ts
+│   └── prisma.module.ts
+└── app.module.ts                     # Updated automatically
 
-.env.example                        # Environment template
-package.json                        # ✏️ Dependencies added
-```
-
-### Dependencies Added (~8 packages)
-
-```json
-{
-  "@nestjs/jwt": "^11.0.0",
-  "@nestjs/passport": "^11.0.0",
-  "@nestjs/config": "^3.0.0",
-  "@nestjs/typeorm": "^11.0.0",
-  "passport": "^0.7.0",
-  "passport-jwt": "^4.0.1",
-  "passport-local": "^1.0.0",
-  "bcrypt": "^5.1.1",
-  "class-validator": "^0.14.0",
-  "class-transformer": "^0.5.1"
-}
+.env                                  # Auto-generated with secure secret
+.env.example                          # Git-safe reference
+prisma-schema-additions.prisma        # (Prisma only) Models to add
+main.ts.example                       # Swagger + ValidationPipe setup
 ```
 
 ---
 
-## 📖 Usage Examples
+## Configuration Options
 
-### Protect Routes (Default Behavior)
+| Prompt | Options | Default |
+|--------|---------|---------|
+| Authentication Strategy | JWT | JWT |
+| Enable RBAC | Yes / No | Yes |
+| Default Roles | Admin, User, Moderator, Guest | Admin, User |
+| Refresh Tokens | Yes / No | Yes |
+| Access Token TTL | 15m, 30m, 1h, 4h, 1d | 1h |
+| Refresh Token TTL | 7d, 30d, 90d, 1y | 7d |
+| Rate Limiting | Yes / No | Yes |
+| Swagger Documentation | Yes / No | Yes |
+| Unit Tests | Yes / No | Yes |
+| Username Field | Yes / No | No |
+| Email Verification | Yes / No | No |
+| Forgot/Reset Password | Yes / No | Yes |
+| Database | PostgreSQL, MySQL, SQLite, MongoDB | Auto-detect |
+| Auto-install | Yes / No | Yes |
 
-All routes require authentication by default:
+---
+
+## ORM Support
+
+### TypeORM (auto-detected)
+
+Generates full entity files with decorators. Works with PostgreSQL, MySQL, and SQLite.
+
+### Prisma (auto-detected)
+
+Generates a `PrismaService`, `PrismaModule`, and a `prisma-schema-additions.prisma` file containing the models to copy into your `schema.prisma`:
+
+```bash
+# After generation:
+# 1. Copy models from prisma-schema-additions.prisma into prisma/schema.prisma
+# 2. Run migrations:
+npx prisma migrate dev --name add-auth-models
+npx prisma generate
+```
+
+---
+
+## Usage Examples
+
+### Protect Routes (default behavior)
+
+All routes require JWT authentication by default:
 
 ```typescript
 @Controller('posts')
 export class PostsController {
-  @Get() // ⛔ Requires JWT token
+  @Get() // Requires JWT token
   findAll() {
     return this.postsService.findAll();
   }
@@ -176,44 +205,32 @@ export class PostsController {
 
 ### Make Routes Public
 
-Use `@Public()` decorator:
-
 ```typescript
 import { Public } from './auth/decorators/public.decorator';
 
-@Public() // ✅ No authentication needed
-@Get('public')
-getPublicData() {
-  return 'Everyone can see this';
+@Public()
+@Get('health')
+healthCheck() {
+  return { status: 'ok' };
 }
 ```
 
 ### Access Current User
-
-Use `@CurrentUser()` decorator:
 
 ```typescript
 import { CurrentUser } from './auth/decorators/current-user.decorator';
 
 @Get('me')
 getProfile(@CurrentUser() user: any) {
-  return {
-    id: user.id,
-    email: user.email,
-    roles: user.roles,
-  };
+  return { id: user.id, email: user.email };
 }
 ```
 
-### Restrict by Role (RBAC)
-
-Use `@Roles()` decorator:
+### Restrict by Role
 
 ```typescript
 import { Roles } from './auth/decorators/roles.decorator';
-import { RolesGuard } from './auth/guards/roles.guard';
 
-@UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('Admin')
 @Delete(':id')
 deleteUser(@Param('id') id: string) {
@@ -221,65 +238,48 @@ deleteUser(@Param('id') id: string) {
 }
 ```
 
-### Refresh Tokens
+---
 
-Automatically generated endpoint:
+## Security
 
-```bash
-POST /auth/refresh
-Body: { "refreshToken": "..." }
-Response: { "accessToken": "..." }
-```
+- Passwords hashed with **bcrypt** (configurable salt rounds via `BCRYPT_ROUNDS`)
+- JWT signed with **HS256** and crypto-random secret
+- Short-lived access tokens (default 1h)
+- One-time use refresh tokens with database storage and rotation
+- Input validation with **class-validator** on all DTOs
+- Rate limiting on auth endpoints (3-5 req/min)
+- Password reset tokens expire after 1 hour
+- Forgot-password endpoint returns generic message to prevent email enumeration
 
 ---
 
-## 🎯 Configuration Options
+## Troubleshooting
 
-### Interactive Prompts
+### "Not a valid NestJS project"
+Make sure you're in a NestJS project directory with `@nestjs/core` in `package.json`.
 
-| Prompt | Options | Default |
-|--------|---------|---------|
-| **Authentication Strategy** | JWT, OAuth (v1.1), Session (v1.2) | JWT |
-| **Enable RBAC** | Yes, No | Yes |
-| **Default Roles** | Admin, User, Moderator, Guest | Admin, User |
-| **Refresh Tokens** | Yes, No | Yes |
-| **Access Token TTL** | 15m, 30m, 1h, 4h, 1d | 1h |
-| **Refresh Token TTL** | 7d, 30d, 90d, 1y | 7d |
-| **Database** | PostgreSQL, MySQL, SQLite, MongoDB | Auto-detect |
-| **Auto-install** | Yes, No | Yes |
+### "auth/ directory already exists"
+Delete the existing `src/auth/` directory before running the generator.
 
-### Command-Line Flags (Coming Soon)
+### "JWT secret not found"
+The `.env` file is auto-generated. If missing, copy `.env.example` to `.env`.
 
-```bash
-npx add-nest-auth --preset jwt-rbac    # Use preset
-npx add-nest-auth --dry-run            # Preview changes
-npx add-nest-auth --force              # Overwrite existing
-npx add-nest-auth --no-install         # Skip npm install
-```
+### "Database connection failed"
+Check your database credentials in `.env` and ensure the database server is running.
 
 ---
 
-## 🔒 Security Features
+## Roadmap
 
-- ✅ **Password Hashing** - bcrypt with salt rounds
-- ✅ **JWT Signing** - HS256 algorithm with secrets
-- ✅ **Token Expiration** - Short-lived access tokens
-- ✅ **Refresh Rotation** - One-time use refresh tokens
-- ✅ **Input Validation** - class-validator on all DTOs
-- ✅ **Type Safety** - Full TypeScript coverage
-- ✅ **Guard Protection** - Automatic route protection
+- OAuth 2.0 (Google, GitHub)
+- Session-based authentication
+- Two-factor authentication (TOTP)
+- Account lockout
+- Admin panel UI
 
 ---
 
-## 📚 Documentation
-
-- **[Complete Usage Guide](./USAGE.md)** - Comprehensive documentation
-- **[Generated README](./src/auth/README.md)** - Created after generation
-- **[NestJS Docs](https://docs.nestjs.com/security/authentication)** - Official docs
-
----
-
-## 🛠️ Requirements
+## Requirements
 
 - **Node.js** >= 18.0.0
 - **NestJS** >= 10.0.0
@@ -288,81 +288,18 @@ npx add-nest-auth --no-install         # Skip npm install
 
 ---
 
-## 🎬 Coming Soon
+## License
 
-### v1.1 - OAuth Integration
-- Google OAuth
-- GitHub OAuth
-- Facebook OAuth
-
-### v1.2 - Session-Based Auth
-- Express session support
-- Cookie-based authentication
-
-### v1.3 - Multi-ORM Support
-- Prisma templates
-- Mongoose templates
-
-### v1.4 - Advanced Features
-- Email verification
-- Password reset flow
-- Two-factor authentication (TOTP)
-- Account lockout
-
-### v2.0 - Admin Panel
-- Auto-generated admin UI
-- User management
-- Role management
+MIT
 
 ---
 
-## 🐛 Troubleshooting
+## Links
 
-### "Not a valid NestJS project"
-Ensure you're in a NestJS project directory with `@nestjs/core` in package.json.
-
-### "auth/ directory already exists"
-Delete existing `src/auth/` directory or use `--force` flag (coming soon).
-
-### "JWT secret not found"
-Copy `.env.example` to `.env` and set `JWT_SECRET`.
-
-### "Database connection failed"
-Check database credentials in `.env` and ensure database is running.
-
-**[See full troubleshooting guide →](./USAGE.md#troubleshooting)**
-
----
-
-## 🤝 Contributing
-
-Contributions are welcome! Please see [CONTRIBUTING.md](./CONTRIBUTING.md) for details.
-
----
-
-## 📄 License
-
-MIT © [Your Name]
-
----
-
-## 🌟 Show Your Support
-
-If this tool helped you, please consider:
-
-- ⭐ Starring the repo
-- 🐛 Reporting issues
-- 💡 Suggesting features
-- 📢 Sharing with others
-
----
-
-## 🔗 Links
-
-- **GitHub**: https://github.com/Islamawad132/add-nest-auth
 - **npm**: https://www.npmjs.com/package/add-nest-auth
+- **GitHub**: https://github.com/Islamawad132/add-nest-auth
 - **Issues**: https://github.com/Islamawad132/add-nest-auth/issues
 
 ---
 
-**Built with ❤️ for the NestJS community**
+**Built for the NestJS community**
