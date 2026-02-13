@@ -1,4 +1,4 @@
-import { Controller, Post, Body, HttpCode, HttpStatus{{#if features.refreshTokens}}, Req{{/if}}{{#if features.emailVerification}}, Get, Query{{/if}} } from '@nestjs/common';
+import { Controller, Post, Body, HttpCode, HttpStatus{{#if features.refreshTokens}}, Req{{/if}}{{#if (or features.emailVerification oauth)}}, Get{{/if}}{{#if features.emailVerification}}, Query{{/if}}{{#if oauth}}, UseGuards, Res{{/if}} } from '@nestjs/common';
 {{#if features.rateLimiting}}
 import { Throttle, SkipThrottle } from '@nestjs/throttler';
 {{/if}}
@@ -16,6 +16,14 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { AuthResponseDto } from './dto/auth-response.dto';
 import { Public } from './decorators/public.decorator';
 import { CurrentUser } from './decorators/current-user.decorator';
+{{#if oauth}}
+{{#if oauth.google}}
+import { GoogleAuthGuard } from './guards/google-auth.guard';
+{{/if}}
+{{#if oauth.github}}
+import { GithubAuthGuard } from './guards/github-auth.guard';
+{{/if}}
+{{/if}}
 
 @Controller('auth')
 {{#if features.swagger}}
@@ -173,5 +181,53 @@ export class AuthController {
     await this.authService.logoutAll(req.user.id);
     return { message: 'Logged out from all devices' };
   }
+{{/if}}
+
+{{#if oauth}}
+{{#if oauth.google}}
+  @Public()
+  @Get('google')
+  @UseGuards(GoogleAuthGuard)
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Login with Google' })
+{{/if}}
+  async googleAuth() {}
+
+  @Public()
+  @Get('google/callback')
+  @UseGuards(GoogleAuthGuard)
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Google OAuth callback' })
+{{/if}}
+  async googleAuthCallback(@Req() req: any, @Res() res: any) {
+    const result = await this.authService.validateOAuthUser(req.user);
+    const tokens = await this.authService.oauthLogin(result);
+    // Redirect with tokens as query params (customize for your frontend)
+    res.redirect(`/?accessToken=${tokens.accessToken}${tokens.refreshToken ? '&refreshToken=' + tokens.refreshToken : ''}`);
+  }
+{{/if}}
+
+{{#if oauth.github}}
+  @Public()
+  @Get('github')
+  @UseGuards(GithubAuthGuard)
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'Login with GitHub' })
+{{/if}}
+  async githubAuth() {}
+
+  @Public()
+  @Get('github/callback')
+  @UseGuards(GithubAuthGuard)
+{{#if features.swagger}}
+  @ApiOperation({ summary: 'GitHub OAuth callback' })
+{{/if}}
+  async githubAuthCallback(@Req() req: any, @Res() res: any) {
+    const result = await this.authService.validateOAuthUser(req.user);
+    const tokens = await this.authService.oauthLogin(result);
+    // Redirect with tokens as query params (customize for your frontend)
+    res.redirect(`/?accessToken=${tokens.accessToken}${tokens.refreshToken ? '&refreshToken=' + tokens.refreshToken : ''}`);
+  }
+{{/if}}
 {{/if}}
 }

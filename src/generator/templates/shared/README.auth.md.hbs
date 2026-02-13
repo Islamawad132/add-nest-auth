@@ -14,6 +14,15 @@ This authentication module provides:
 {{/if}}
 - ✅ Password hashing with bcrypt
 - ✅ Request validation with class-validator
+{{#if features.accountLockout}}
+- ✅ Account lockout after failed login attempts (5 attempts, 15 min lock)
+{{/if}}
+{{#if features.emailService}}
+- ✅ Email service (Nodemailer) for verification & password reset emails
+{{/if}}
+{{#if oauth}}
+- ✅ OAuth2 social login ({{#if oauth.google}}Google{{/if}}{{#if (and oauth.google oauth.github)}}, {{/if}}{{#if oauth.github}}GitHub{{/if}})
+{{/if}}
 {{#if (eq orm "typeorm")}}
 - ✅ TypeORM integration
 {{/if}}

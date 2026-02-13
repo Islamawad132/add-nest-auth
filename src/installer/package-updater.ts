@@ -115,6 +115,22 @@ export class PackageUpdater {
       dependencies['@nestjs/swagger'] = '^11.0.0';
     }
 
+    // Add OAuth dependencies
+    if (config.oauth?.google) {
+      dependencies['passport-google-oauth20'] = '^2.0.0';
+      devDependencies['@types/passport-google-oauth20'] = '^2.0.14';
+    }
+    if (config.oauth?.github) {
+      dependencies['passport-github2'] = '^0.1.12';
+      devDependencies['@types/passport-github2'] = '^1.2.9';
+    }
+
+    // Add Nodemailer dependency
+    if (config.features.emailService) {
+      dependencies['nodemailer'] = '^6.9.0';
+      devDependencies['@types/nodemailer'] = '^6.4.0';
+    }
+
     return { dependencies, devDependencies };
   }
 

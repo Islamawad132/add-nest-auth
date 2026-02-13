@@ -19,6 +19,10 @@ export interface PromptAnswers {
   useUsername: boolean;
   enableEmailVerification: boolean;
   enableResetPassword: boolean;
+  enableAccountLockout: boolean;
+  enableEmailService: boolean;
+  enableOAuth: boolean;
+  oauthProviders: string[];
   useDetectedORM: boolean;
   database: string;
   autoInstall: boolean;
@@ -138,6 +142,41 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
     },
     {
       type: 'confirm',
+      name: 'enableAccountLockout',
+      message: 'Enable account lockout after failed login attempts?',
+      default: false,
+    },
+    {
+      type: 'confirm',
+      name: 'enableEmailService',
+      message: 'Enable email service (Nodemailer) for sending emails?',
+      default: false,
+      when: (answers: any) => answers.enableEmailVerification || answers.enableResetPassword,
+    },
+    {
+      type: 'confirm',
+      name: 'enableOAuth',
+      message: 'Enable OAuth2 social login (Google, GitHub)?',
+      default: false,
+    },
+    {
+      type: 'checkbox',
+      name: 'oauthProviders',
+      message: 'Select OAuth providers:',
+      choices: [
+        { name: 'Google', value: 'google', checked: true },
+        { name: 'GitHub', value: 'github', checked: true },
+      ],
+      when: (answers: any) => answers.enableOAuth,
+      validate: (input: string[]) => {
+        if (input.length === 0) {
+          return 'Please select at least one provider';
+        }
+        return true;
+      },
+    },
+    {
+      type: 'confirm',
       name: 'useDetectedORM',
       message: `Detected ${detectedORM.toUpperCase()}${dbLabel}. Use it?`,
       default: true,
@@ -184,6 +223,10 @@ export function getDefaultAnswers(_detectedORM: ORM, detectedDB?: string): Promp
     useUsername: false,
     enableEmailVerification: false,
     enableResetPassword: true,
+    enableAccountLockout: false,
+    enableEmailService: false,
+    enableOAuth: false,
+    oauthProviders: [],
     useDetectedORM: true,
     database: detectedDB || 'postgres',
     autoInstall: true,
@@ -218,12 +261,18 @@ export function buildConfig(
       useUsername: answers.useUsername,
       emailVerification: answers.enableEmailVerification,
       resetPassword: answers.enableResetPassword,
+      accountLockout: answers.enableAccountLockout,
+      emailService: answers.enableEmailService,
     },
     jwt: {
       secret: generateSecret(),
       accessExpiration: answers.accessExpiration,
       refreshExpiration: answers.refreshExpiration || '7d',
     },
+    oauth: answers.enableOAuth ? {
+      google: (answers.oauthProviders || []).includes('google'),
+      github: (answers.oauthProviders || []).includes('github'),
+    } : undefined,
     autoInstall: answers.autoInstall,
     timestamp: new Date().toISOString(),
     generatorVersion: '1.3.0',

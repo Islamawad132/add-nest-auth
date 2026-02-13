@@ -1,0 +1,71 @@
+import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import * as nodemailer from 'nodemailer';
+
+@Injectable()
+export class MailService {
+  private transporter: nodemailer.Transporter;
+
+  constructor(private configService: ConfigService) {
+    this.transporter = nodemailer.createTransport({
+      host: this.configService.get('SMTP_HOST', 'smtp.ethereal.email'),
+      port: parseInt(this.configService.get('SMTP_PORT', '587'), 10),
+      secure: false,
+      auth: {
+        user: this.configService.get('SMTP_USER'),
+        pass: this.configService.get('SMTP_PASS'),
+      },
+    });
+  }
+
+  private get appUrl(): string {
+    return this.configService.get('APP_URL', 'http://localhost:3000');
+  }
+
+  private get mailFrom(): string {
+    return this.configService.get('MAIL_FROM', 'noreply@example.com');
+  }
+
+{{#if features.emailVerification}}
+  /**
+   * Send email verification link
+   */
+  async sendVerificationEmail(to: string, token: string): Promise<void> {
+    const verifyUrl = `${this.appUrl}/auth/verify-email?token=${token}`;
+
+    await this.transporter.sendMail({
+      from: this.mailFrom,
+      to,
+      subject: 'Verify your email address',
+      html: `
+        <h2>Email Verification</h2>
+        <p>Click the link below to verify your email address:</p>
+        <p><a href="${verifyUrl}">${verifyUrl}</a></p>
+        <p>If you did not create an account, please ignore this email.</p>
+      `,
+    });
+  }
+{{/if}}
+
+{{#if features.resetPassword}}
+  /**
+   * Send password reset link
+   */
+  async sendResetPasswordEmail(to: string, token: string): Promise<void> {
+    const resetUrl = `${this.appUrl}/auth/reset-password?token=${token}`;
+
+    await this.transporter.sendMail({
+      from: this.mailFrom,
+      to,
+      subject: 'Reset your password',
+      html: `
+        <h2>Password Reset</h2>
+        <p>Click the link below to reset your password:</p>
+        <p><a href="${resetUrl}">${resetUrl}</a></p>
+        <p>This link expires in 1 hour.</p>
+        <p>If you did not request a password reset, please ignore this email.</p>
+      `,
+    });
+  }
+{{/if}}
+}

@@ -112,6 +112,20 @@ export class Generator {
       { template: 'jwt/local-auth.guard.ts.hbs', output: `${config.sourceRoot}/auth/guards/local-auth.guard.ts` }
     );
 
+    // OAuth strategies and guards (conditional)
+    if (config.oauth?.google) {
+      plan.push(
+        { template: 'strategies/google.strategy.ts.hbs', output: `${config.sourceRoot}/auth/strategies/google.strategy.ts` },
+        { template: 'guards/google-auth.guard.ts.hbs', output: `${config.sourceRoot}/auth/guards/google-auth.guard.ts` },
+      );
+    }
+    if (config.oauth?.github) {
+      plan.push(
+        { template: 'strategies/github.strategy.ts.hbs', output: `${config.sourceRoot}/auth/strategies/github.strategy.ts` },
+        { template: 'guards/github-auth.guard.ts.hbs', output: `${config.sourceRoot}/auth/guards/github-auth.guard.ts` },
+      );
+    }
+
     // RBAC (conditional)
     if (config.rbac.enabled) {
       plan.push(
@@ -168,6 +182,14 @@ export class Generator {
         { template: 'prisma/prisma.service.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.service.ts` },
         { template: 'prisma/prisma.module.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.module.ts` },
         { template: 'prisma/schema.prisma.additions.hbs', output: 'prisma-schema-additions.prisma' },
+      );
+    }
+
+    // Mail module (conditional)
+    if (config.features.emailService) {
+      plan.push(
+        { template: 'mail/mail.module.ts.hbs', output: `${config.sourceRoot}/mail/mail.module.ts` },
+        { template: 'mail/mail.service.ts.hbs', output: `${config.sourceRoot}/mail/mail.service.ts` },
       );
     }
 

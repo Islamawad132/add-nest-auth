@@ -19,9 +19,21 @@ export class User {
   username: string;
 
 {{/if}}
-  @Column()
+  @Column({ nullable: {{#if oauth}}true{{else}}false{{/if}} })
   password: string;
 
+{{#if oauth}}
+{{#if oauth.google}}
+  @Column({ nullable: true, unique: true })
+  googleId: string;
+
+{{/if}}
+{{#if oauth.github}}
+  @Column({ nullable: true, unique: true })
+  githubId: string;
+
+{{/if}}
+{{/if}}
 {{#if rbac.enabled}}
   @Column('simple-array', { default: 'User' })
   roles: string[];
@@ -41,6 +53,14 @@ export class User {
 
   @Column({ type: 'datetime', nullable: true })
   passwordResetExpires: Date;
+
+{{/if}}
+{{#if features.accountLockout}}
+  @Column({ default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ type: 'datetime', nullable: true })
+  lockUntil: Date;
 
 {{/if}}
   @CreateDateColumn()

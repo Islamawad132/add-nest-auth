@@ -72,6 +72,44 @@ export class UsersService {
     await this.usersRepository.update(id, { passwordResetToken: null as any, passwordResetExpires: null as any });
   }
 {{/if}}
+
+{{#if features.accountLockout}}
+  async incrementFailedAttempts(id: string, attempts: number): Promise<void> {
+    await this.usersRepository.update(id, { failedLoginAttempts: attempts });
+  }
+
+  async lockAccount(id: string, attempts: number, lockUntil: Date): Promise<void> {
+    await this.usersRepository.update(id, { failedLoginAttempts: attempts, lockUntil });
+  }
+
+  async resetFailedAttempts(id: string): Promise<void> {
+    await this.usersRepository.update(id, { failedLoginAttempts: 0, lockUntil: null as any });
+  }
+{{/if}}
+
+{{#if oauth}}
+  async findByOAuthProvider(provider: string, providerId: string): Promise<User | null> {
+    const field = provider === 'google' ? 'googleId' : 'githubId';
+    return await this.usersRepository.findOne({ where: { [field]: providerId } });
+  }
+
+  async linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void> {
+    const field = provider === 'google' ? 'googleId' : 'githubId';
+    await this.usersRepository.update(userId, { [field]: providerId } as any);
+  }
+
+  async createFromOAuth(oauthUser: { provider: string; providerId: string; email: string; displayName?: string }): Promise<User> {
+    const field = oauthUser.provider === 'google' ? 'googleId' : 'githubId';
+    const user = this.usersRepository.create({
+      email: oauthUser.email,
+      [field]: oauthUser.providerId,
+{{#if rbac.enabled}}
+      roles: ['User'],
+{{/if}}
+    } as any);
+    return await this.usersRepository.save(user);
+  }
+{{/if}}
 {{else if (eq orm "prisma")}}
   constructor(private prisma: PrismaService) {}
 
@@ -140,6 +178,45 @@ export class UsersService {
     await this.prisma.user.update({ where: { id }, data: { passwordResetToken: null, passwordResetExpires: null } });
   }
 {{/if}}
+
+{{#if features.accountLockout}}
+  async incrementFailedAttempts(id: string, attempts: number): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { failedLoginAttempts: attempts } });
+  }
+
+  async lockAccount(id: string, attempts: number, lockUntil: Date): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { failedLoginAttempts: attempts, lockUntil } });
+  }
+
+  async resetFailedAttempts(id: string): Promise<void> {
+    await this.prisma.user.update({ where: { id }, data: { failedLoginAttempts: 0, lockUntil: null } });
+  }
+{{/if}}
+
+{{#if oauth}}
+  async findByOAuthProvider(provider: string, providerId: string): Promise<any> {
+    const field = provider === 'google' ? 'googleId' : 'githubId';
+    return await this.prisma.user.findFirst({ where: { [field]: providerId } });
+  }
+
+  async linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void> {
+    const field = provider === 'google' ? 'googleId' : 'githubId';
+    await this.prisma.user.update({ where: { id: userId }, data: { [field]: providerId } });
+  }
+
+  async createFromOAuth(oauthUser: { provider: string; providerId: string; email: string; displayName?: string }): Promise<any> {
+    const field = oauthUser.provider === 'google' ? 'googleId' : 'githubId';
+    return await this.prisma.user.create({
+      data: {
+        email: oauthUser.email,
+        [field]: oauthUser.providerId,
+{{#if rbac.enabled}}
+        roles: ['User'],
+{{/if}}
+      },
+    });
+  }
+{{/if}}
 {{else}}
   async create(createUserDto: CreateUserDto): Promise<any> {
     throw new Error('Not implemented - implement with your ORM');
@@ -185,6 +262,34 @@ export class UsersService {
   }
 
   async clearResetToken(id: string): Promise<void> {
+    throw new Error('Not implemented');
+  }
+{{/if}}
+
+{{#if features.accountLockout}}
+  async incrementFailedAttempts(id: string, attempts: number): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  async lockAccount(id: string, attempts: number, lockUntil: Date): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  async resetFailedAttempts(id: string): Promise<void> {
+    throw new Error('Not implemented');
+  }
+{{/if}}
+
+{{#if oauth}}
+  async findByOAuthProvider(provider: string, providerId: string): Promise<any> {
+    throw new Error('Not implemented');
+  }
+
+  async linkOAuthProvider(userId: string, provider: string, providerId: string): Promise<void> {
+    throw new Error('Not implemented');
+  }
+
+  async createFromOAuth(oauthUser: { provider: string; providerId: string; email: string; displayName?: string }): Promise<any> {
     throw new Error('Not implemented');
   }
 {{/if}}

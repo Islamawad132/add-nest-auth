@@ -5,6 +5,9 @@ import { UnauthorizedException } from '@nestjs/common';
 import * as bcrypt from 'bcrypt';
 import { AuthService } from './auth.service';
 import { UsersService } from '../users/users.service';
+{{#if features.emailService}}
+import { MailService } from '../mail/mail.service';
+{{/if}}
 {{#if (eq orm "typeorm")}}
 {{#if features.refreshTokens}}
 import { getRepositoryToken } from '@nestjs/typeorm';
@@ -54,6 +57,16 @@ describe('AuthService', () => {
     findByResetToken: jest.fn(),
     clearResetToken: jest.fn(),
 {{/if}}
+{{#if features.accountLockout}}
+    incrementFailedAttempts: jest.fn(),
+    lockAccount: jest.fn(),
+    resetFailedAttempts: jest.fn(),
+{{/if}}
+{{#if oauth}}
+    findByOAuthProvider: jest.fn(),
+    linkOAuthProvider: jest.fn(),
+    createFromOAuth: jest.fn(),
+{{/if}}
   };
 
   const mockJwtService = {
@@ -70,6 +83,17 @@ describe('AuthService', () => {
       return config[key] || defaultValue;
     }),
   };
+
+{{#if features.emailService}}
+  const mockMailService = {
+{{#if features.emailVerification}}
+    sendVerificationEmail: jest.fn(),
+{{/if}}
+{{#if features.resetPassword}}
+    sendResetPasswordEmail: jest.fn(),
+{{/if}}
+  };
+{{/if}}
 
 {{#if (eq orm "typeorm")}}
 {{#if features.refreshTokens}}
@@ -90,6 +114,9 @@ describe('AuthService', () => {
         { provide: UsersService, useValue: mockUsersService },
         { provide: JwtService, useValue: mockJwtService },
         { provide: ConfigService, useValue: mockConfigService },
+{{#if features.emailService}}
+        { provide: MailService, useValue: mockMailService },
+{{/if}}
 {{#if (eq orm "typeorm")}}
 {{#if features.refreshTokens}}
         { provide: getRepositoryToken(RefreshToken), useValue: mockRefreshTokenRepository },
@@ -140,6 +167,51 @@ describe('AuthService', () => {
 
       expect(result).toBeNull();
     });
+
+{{#if features.accountLockout}}
+    it('should throw ForbiddenException when account is locked', async () => {
+      const lockedUser = {
+        ...mockUser,
+        failedLoginAttempts: 5,
+        lockUntil: new Date(Date.now() + 15 * 60 * 1000),
+      };
+      mockUsersService.findByEmail.mockResolvedValue(lockedUser);
+
+      await expect(
+        authService.validateUser('test@example.com', 'password123'),
+      ).rejects.toThrow('Account is locked');
+    });
+
+    it('should increment failed attempts on wrong password', async () => {
+      const userWithAttempts = { ...mockUser, failedLoginAttempts: 2 };
+      mockUsersService.findByEmail.mockResolvedValue(userWithAttempts);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await authService.validateUser('test@example.com', 'wrongpassword');
+
+      expect(mockUsersService.incrementFailedAttempts).toHaveBeenCalledWith('test-uuid', 3);
+    });
+
+    it('should lock account after 5 failed attempts', async () => {
+      const userWithAttempts = { ...mockUser, failedLoginAttempts: 4 };
+      mockUsersService.findByEmail.mockResolvedValue(userWithAttempts);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(false);
+
+      await authService.validateUser('test@example.com', 'wrongpassword');
+
+      expect(mockUsersService.lockAccount).toHaveBeenCalledWith('test-uuid', 5, expect.any(Date));
+    });
+
+    it('should reset failed attempts on successful login', async () => {
+      const userWithAttempts = { ...mockUser, failedLoginAttempts: 3, lockUntil: null };
+      mockUsersService.findByEmail.mockResolvedValue(userWithAttempts);
+      (bcrypt.compare as jest.Mock).mockResolvedValue(true);
+
+      await authService.validateUser('test@example.com', 'password123');
+
+      expect(mockUsersService.resetFailedAttempts).toHaveBeenCalledWith('test-uuid');
+    });
+{{/if}}
   });
 
   describe('login', () => {

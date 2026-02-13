@@ -12,10 +12,21 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 {{#if (eq orm "prisma")}}
 import { PrismaService } from '../prisma/prisma.service';
 {{/if}}
+{{#if features.emailService}}
+import { MailModule } from '../mail/mail.module';
+{{/if}}
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { LocalStrategy } from './strategies/local.strategy';
+{{#if oauth}}
+{{#if oauth.google}}
+import { GoogleStrategy } from './strategies/google.strategy';
+{{/if}}
+{{#if oauth.github}}
+import { GithubStrategy } from './strategies/github.strategy';
+{{/if}}
+{{/if}}
 import { UsersModule } from '../users/users.module';
 {{#if (eq orm "typeorm")}}
 import { User } from '../users/entities/user.entity';
@@ -29,6 +40,9 @@ import { RefreshToken } from '../users/entities/refresh-token.entity';
     UsersModule,
     PassportModule,
     ConfigModule,
+{{#if features.emailService}}
+    MailModule,
+{{/if}}
 {{#if features.rateLimiting}}
     ThrottlerModule.forRoot([{
       ttl: 60000,
@@ -64,6 +78,14 @@ import { RefreshToken } from '../users/entities/refresh-token.entity';
     AuthService,
     JwtStrategy,
     LocalStrategy,
+{{#if oauth}}
+{{#if oauth.google}}
+    GoogleStrategy,
+{{/if}}
+{{#if oauth.github}}
+    GithubStrategy,
+{{/if}}
+{{/if}}
 {{#if (eq orm "prisma")}}
 {{#if features.refreshTokens}}
     PrismaService,

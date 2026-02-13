@@ -592,6 +592,22 @@ select:focus { border-color: var(--accent); }
           <div class="form-label">Forgot/Reset Password<span class="desc">Token-based password reset flow</span></div>
           <label class="toggle"><input type="checkbox" id="cfg-reset-pw" checked><span class="slider"></span></label>
         </div>
+        <div class="form-group">
+          <div class="form-label">Account Lockout<span class="desc">Lock account after 5 failed login attempts (15 min)</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-lockout"><span class="slider"></span></label>
+        </div>
+        <div class="form-group" id="email-service-group" style="display:none;">
+          <div class="form-label">Email Service (Nodemailer)<span class="desc">Send verification & reset emails via SMTP</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-email-service"><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">OAuth2 Social Login<span class="desc">Google and/or GitHub login</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-oauth"><span class="slider"></span></label>
+        </div>
+        <div id="oauth-providers-group" class="checkbox-group" style="display:none;padding:0 0 12px;border-bottom:1px solid var(--border);">
+          <label class="checkbox-label"><input type="checkbox" value="google" checked> Google</label>
+          <label class="checkbox-label"><input type="checkbox" value="github" checked> GitHub</label>
+        </div>
       </div>
 
       <div class="card">
@@ -805,11 +821,30 @@ function setupFormListeners() {
   const rolesGroup = document.getElementById('roles-group');
   const refreshExpGroup = document.getElementById('refresh-exp-group');
 
+  const emailVerify = document.getElementById('cfg-email-verify');
+  const resetPw = document.getElementById('cfg-reset-pw');
+  const emailServiceGroup = document.getElementById('email-service-group');
+
   rbac.addEventListener('change', () => {
     rolesGroup.style.display = rbac.checked ? 'flex' : 'none';
   });
   refresh.addEventListener('change', () => {
     refreshExpGroup.style.display = refresh.checked ? 'flex' : 'none';
+  });
+
+  function updateEmailServiceVisibility() {
+    const show = emailVerify.checked || resetPw.checked;
+    emailServiceGroup.style.display = show ? 'flex' : 'none';
+    if (!show) document.getElementById('cfg-email-service').checked = false;
+  }
+  emailVerify.addEventListener('change', updateEmailServiceVisibility);
+  resetPw.addEventListener('change', updateEmailServiceVisibility);
+  updateEmailServiceVisibility();
+
+  const oauthToggle = document.getElementById('cfg-oauth');
+  const oauthProvidersGroup = document.getElementById('oauth-providers-group');
+  oauthToggle.addEventListener('change', () => {
+    oauthProvidersGroup.style.display = oauthToggle.checked ? 'flex' : 'none';
   });
 }
 
@@ -832,6 +867,12 @@ function collectFormValues() {
     useUsername: document.getElementById('cfg-username').checked,
     enableEmailVerification: document.getElementById('cfg-email-verify').checked,
     enableResetPassword: document.getElementById('cfg-reset-pw').checked,
+    enableAccountLockout: document.getElementById('cfg-lockout').checked,
+    enableEmailService: document.getElementById('cfg-email-service').checked,
+    enableOAuth: document.getElementById('cfg-oauth').checked,
+    oauthProviders: document.getElementById('cfg-oauth').checked
+      ? Array.from(document.querySelectorAll('#oauth-providers-group input:checked')).map(el => el.value)
+      : [],
     useDetectedORM: true,
     database: (state.projectInfo && state.projectInfo.database) || 'postgres',
     autoInstall: document.getElementById('cfg-auto-install').checked,
@@ -1036,6 +1077,14 @@ function renderEndpoints() {
     rows.push(['POST', '/auth/refresh', 'Public', 'Refresh access token']);
     rows.push(['POST', '/auth/logout', 'JWT', 'Logout (invalidate refresh token)']);
     rows.push(['POST', '/auth/logout-all', 'JWT', 'Logout from all devices']);
+  }
+  if (cfg.enableOAuth && cfg.oauthProviders.includes('google')) {
+    rows.push(['GET', '/auth/google', 'Public', 'Login with Google']);
+    rows.push(['GET', '/auth/google/callback', 'Public', 'Google OAuth callback']);
+  }
+  if (cfg.enableOAuth && cfg.oauthProviders.includes('github')) {
+    rows.push(['GET', '/auth/github', 'Public', 'Login with GitHub']);
+    rows.push(['GET', '/auth/github/callback', 'Public', 'GitHub OAuth callback']);
   }
   rows.push(['GET', '/users/profile', 'JWT', 'Get current user profile']);
   if (cfg.enableRBAC) {

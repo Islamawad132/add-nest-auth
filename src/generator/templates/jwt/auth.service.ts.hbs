@@ -1,4 +1,4 @@
-import { Injectable, UnauthorizedException{{#if features.resetPassword}}, BadRequestException{{/if}}{{#if features.emailVerification}}, NotFoundException{{/if}} } from '@nestjs/common';
+import { Injectable, UnauthorizedException{{#if features.resetPassword}}, BadRequestException{{/if}}{{#if features.emailVerification}}, NotFoundException{{/if}}{{#if features.accountLockout}}, ForbiddenException{{/if}} } from '@nestjs/common';
 {{#if (or features.emailVerification features.resetPassword)}}
 import * as crypto from 'crypto';
 {{/if}}
@@ -13,6 +13,9 @@ import { PrismaService } from '../prisma/prisma.service';
 {{/if}}
 import * as bcrypt from 'bcrypt';
 import { UsersService } from '../users/users.service';
+{{#if features.emailService}}
+import { MailService } from '../mail/mail.service';
+{{/if}}
 {{#if (eq orm "typeorm")}}
 import { User } from '../users/entities/user.entity';
 {{#if features.refreshTokens}}
@@ -45,6 +48,9 @@ export class AuthService {
     private prisma: PrismaService,
 {{/if}}
 {{/if}}
+{{#if features.emailService}}
+    private mailService: MailService,
+{{/if}}
   ) {}
 
   /**
@@ -56,11 +62,38 @@ export class AuthService {
       return null;
     }
 
+{{#if features.accountLockout}}
+    // Check if account is locked
+    if (user.lockUntil && user.lockUntil > new Date()) {
+      const minutesLeft = Math.ceil((user.lockUntil.getTime() - Date.now()) / 60000);
+      throw new ForbiddenException(
+        `Account is locked. Try again in ${minutesLeft} minute${minutesLeft > 1 ? 's' : ''}.`,
+      );
+    }
+
+{{/if}}
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
+{{#if features.accountLockout}}
+      // Increment failed attempts and lock after 5 failures
+      const attempts = (user.failedLoginAttempts || 0) + 1;
+      if (attempts >= 5) {
+        const lockUntil = new Date(Date.now() + 15 * 60 * 1000); // Lock for 15 minutes
+        await this.usersService.lockAccount(user.id, attempts, lockUntil);
+      } else {
+        await this.usersService.incrementFailedAttempts(user.id, attempts);
+      }
+{{/if}}
       return null;
     }
 
+{{#if features.accountLockout}}
+    // Reset failed attempts on successful login
+    if (user.failedLoginAttempts > 0) {
+      await this.usersService.resetFailedAttempts(user.id);
+    }
+
+{{/if}}
     const { password: _, ...result } = user;
     return result;
   }
@@ -133,7 +166,11 @@ export class AuthService {
     // Generate email verification token
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await this.usersService.setVerificationToken(user.id, verificationToken);
+{{#if features.emailService}}
+    await this.mailService.sendVerificationEmail(user.email, verificationToken);
+{{else}}
     // TODO: Send verification email with token to user.email
+{{/if}}
 {{/if}}
 
     const payload = { email: user.email, sub: user.id{{#if rbac.enabled}}, roles: user.roles{{/if}} };
@@ -146,7 +183,9 @@ export class AuthService {
       accessToken,
       refreshToken: refreshToken.token,
 {{#if features.emailVerification}}
+{{#unless features.emailService}}
       verificationToken,
+{{/unless}}
 {{/if}}
       user: {
         id: user.id,
@@ -163,7 +202,9 @@ export class AuthService {
     return {
       accessToken,
 {{#if features.emailVerification}}
+{{#unless features.emailService}}
       verificationToken,
+{{/unless}}
 {{/if}}
       user: {
         id: user.id,
@@ -215,21 +256,35 @@ export class AuthService {
   /**
    * Resend verification email
    */
+{{#if features.emailService}}
+  async resendVerification(email: string): Promise<{ message: string }> {
+{{else}}
   async resendVerification(email: string): Promise<{ verificationToken: string; message: string }> {
+{{/if}}
     const user = await this.usersService.findByEmail(email);
     if (!user) {
       throw new NotFoundException('User not found');
     }
 
     if (user.isEmailVerified) {
+{{#if features.emailService}}
+      return { message: 'Email is already verified' };
+{{else}}
       return { verificationToken: '', message: 'Email is already verified' };
+{{/if}}
     }
 
     const verificationToken = crypto.randomBytes(32).toString('hex');
     await this.usersService.setVerificationToken(user.id, verificationToken);
+{{#if features.emailService}}
+    await this.mailService.sendVerificationEmail(user.email, verificationToken);
+
+    return { message: 'Verification email sent' };
+{{else}}
     // TODO: Send verification email with token to user.email
 
     return { verificationToken, message: 'Verification token generated' };
+{{/if}}
   }
 {{/if}}
 
@@ -237,6 +292,24 @@ export class AuthService {
   /**
    * Forgot password - generate reset token
    */
+{{#if features.emailService}}
+  async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
+    const user = await this.usersService.findByEmail(forgotPasswordDto.email);
+    if (!user) {
+      // Return success even if user not found to prevent email enumeration
+      return { message: 'If the email exists, a password reset link has been sent' };
+    }
+
+    const resetToken = crypto.randomBytes(32).toString('hex');
+    const expires = new Date();
+    expires.setHours(expires.getHours() + 1); // Token expires in 1 hour
+
+    await this.usersService.setResetToken(user.id, resetToken, expires);
+    await this.mailService.sendResetPasswordEmail(user.email, resetToken);
+
+    return { message: 'If the email exists, a password reset link has been sent' };
+  }
+{{else}}
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ resetToken: string; message: string }> {
     const user = await this.usersService.findByEmail(forgotPasswordDto.email);
     if (!user) {
@@ -253,6 +326,7 @@ export class AuthService {
 
     return { resetToken, message: 'Password reset token generated' };
   }
+{{/if}}
 
   /**
    * Reset password with token
@@ -410,6 +484,82 @@ export class AuthService {
     });
 {{else}}
     // TODO: Implement all refresh token deletion for your ORM
+{{/if}}
+  }
+{{/if}}
+
+{{#if oauth}}
+  /**
+   * Handle OAuth login - find or create user from OAuth profile
+   */
+  async validateOAuthUser(oauthUser: {
+    provider: string;
+    providerId: string;
+    email: string;
+    displayName?: string;
+  }): Promise<any> {
+    // Try to find user by OAuth provider ID
+    let user = await this.usersService.findByOAuthProvider(
+      oauthUser.provider,
+      oauthUser.providerId,
+    );
+
+    if (!user) {
+      // Try to find user by email and link the OAuth provider
+      user = await this.usersService.findByEmail(oauthUser.email);
+      if (user) {
+        await this.usersService.linkOAuthProvider(
+          user.id,
+          oauthUser.provider,
+          oauthUser.providerId,
+        );
+      } else {
+        // Create a new user from OAuth data
+        user = await this.usersService.createFromOAuth(oauthUser);
+      }
+    }
+
+    return user;
+  }
+
+  /**
+   * Generate tokens for OAuth-authenticated user
+   */
+  async oauthLogin(user: any): Promise<AuthResponseDto> {
+    const payload = { email: user.email, sub: user.id{{#if rbac.enabled}}, roles: user.roles{{/if}} };
+    const accessToken = this.jwtService.sign(payload);
+
+{{#if features.refreshTokens}}
+    const refreshToken = await this.createRefreshToken(user.id);
+
+    return {
+      accessToken,
+      refreshToken: refreshToken.token,
+      user: {
+        id: user.id,
+        email: user.email,
+{{#if features.useUsername}}
+        username: user.username,
+{{/if}}
+{{#if rbac.enabled}}
+        roles: user.roles,
+{{/if}}
+      },
+    };
+{{else}}
+    return {
+      accessToken,
+      user: {
+        id: user.id,
+        email: user.email,
+{{#if features.useUsername}}
+        username: user.username,
+{{/if}}
+{{#if rbac.enabled}}
+        roles: user.roles,
+{{/if}}
+      },
+    };
 {{/if}}
   }
 {{/if}}

@@ -70,6 +70,11 @@ export class AppModuleUpdater {
       this.addImport('./prisma/prisma.module', ['PrismaModule']);
     }
 
+    // Add MailModule import (if email service enabled)
+    if (config && config.features.emailService) {
+      this.addImport('./mail/mail.module', ['MailModule']);
+    }
+
     // Add AuthModule import
     this.addImport('./auth/auth.module', ['AuthModule']);
 
@@ -176,6 +181,11 @@ export class AppModuleUpdater {
       allElements.push(this.buildTypeOrmConfig(config.database, entities));
     } else if (config && config.orm === 'prisma' && !existingModules.has('PrismaModule')) {
       allElements.push('PrismaModule');
+    }
+
+    // Add MailModule if not exists (email service)
+    if (config && config.features.emailService && !existingModules.has('MailModule')) {
+      allElements.push('MailModule');
     }
 
     // Add AuthModule if not exists

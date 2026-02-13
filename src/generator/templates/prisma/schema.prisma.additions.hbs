@@ -9,7 +9,15 @@ model User {
 {{#if features.useUsername}}
   username  String   @unique
 {{/if}}
-  password  String
+  password  String{{#if oauth}}?{{/if}}
+{{#if oauth}}
+{{#if oauth.google}}
+  googleId  String?  @unique
+{{/if}}
+{{#if oauth.github}}
+  githubId  String?  @unique
+{{/if}}
+{{/if}}
 {{#if rbac.enabled}}
   roles     String[] @default(["User"])
 {{/if}}
@@ -20,6 +28,10 @@ model User {
 {{#if features.resetPassword}}
   passwordResetToken     String?
   passwordResetExpires   DateTime?
+{{/if}}
+{{#if features.accountLockout}}
+  failedLoginAttempts Int      @default(0)
+  lockUntil           DateTime?
 {{/if}}
 {{#if features.refreshTokens}}
   refreshTokens RefreshToken[]

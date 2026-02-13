@@ -20,6 +20,13 @@ export interface FeaturesConfig {
   emailVerification?: boolean;
   resetPassword?: boolean;
   twoFactor?: boolean;
+  accountLockout?: boolean;
+  emailService?: boolean;
+}
+
+export interface OAuthConfig {
+  google: boolean;
+  github: boolean;
 }
 
 export interface JWTConfig {
@@ -48,6 +55,9 @@ export interface AuthConfig {
 
   // JWT configuration
   jwt: JWTConfig;
+
+  // OAuth
+  oauth?: OAuthConfig;
 
   // Options
   autoInstall: boolean;
