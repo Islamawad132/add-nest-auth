@@ -1,5 +1,5 @@
 import { Injectable, UnauthorizedException{{#if features.resetPassword}}, BadRequestException{{/if}}{{#if features.emailVerification}}, NotFoundException{{/if}}{{#if features.accountLockout}}, ForbiddenException{{/if}} } from '@nestjs/common';
-{{#if (or features.emailVerification features.resetPassword)}}
+{{#if (or features.emailVerification features.resetPassword features.refreshTokens)}}
 import * as crypto from 'crypto';
 {{/if}}
 import { JwtService } from '@nestjs/jwt';
@@ -57,7 +57,7 @@ export class AuthService {
    * Validate user credentials
    */
   async validateUser(email: string, password: string): Promise<any> {
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email.toLowerCase());
     if (!user) {
       return null;
     }
@@ -152,7 +152,7 @@ export class AuthService {
     const hashedPassword = await bcrypt.hash(registerDto.password, bcryptRounds);
 
     const user = await this.usersService.create({
-      email: registerDto.email,
+      email: registerDto.email.toLowerCase(),
 {{#if features.useUsername}}
       username: registerDto.username,
 {{/if}}
@@ -244,6 +244,10 @@ export class AuthService {
    * Verify email with token
    */
   async verifyEmail(token: string): Promise<{ message: string }> {
+    if (!token) {
+      throw new NotFoundException('Invalid verification token');
+    }
+
     const user = await this.usersService.findByVerificationToken(token);
     if (!user) {
       throw new NotFoundException('Invalid verification token');
@@ -261,7 +265,7 @@ export class AuthService {
 {{else}}
   async resendVerification(email: string): Promise<{ verificationToken: string; message: string }> {
 {{/if}}
-    const user = await this.usersService.findByEmail(email);
+    const user = await this.usersService.findByEmail(email.toLowerCase());
     if (!user) {
       throw new NotFoundException('User not found');
     }
@@ -294,7 +298,7 @@ export class AuthService {
    */
 {{#if features.emailService}}
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
-    const user = await this.usersService.findByEmail(forgotPasswordDto.email);
+    const user = await this.usersService.findByEmail(forgotPasswordDto.email.toLowerCase());
     if (!user) {
       // Return success even if user not found to prevent email enumeration
       return { message: 'If the email exists, a password reset link has been sent' };
@@ -311,7 +315,7 @@ export class AuthService {
   }
 {{else}}
   async forgotPassword(forgotPasswordDto: ForgotPasswordDto): Promise<{ resetToken: string; message: string }> {
-    const user = await this.usersService.findByEmail(forgotPasswordDto.email);
+    const user = await this.usersService.findByEmail(forgotPasswordDto.email.toLowerCase());
     if (!user) {
       // Return success even if user not found to prevent email enumeration
       return { resetToken: '', message: 'If the email exists, a reset token has been generated' };
@@ -356,7 +360,7 @@ export class AuthService {
    */
   private async createRefreshToken(userId: string): Promise<any> {
     const token = this.jwtService.sign(
-      { sub: userId },
+      { sub: userId, jti: crypto.randomBytes(16).toString('hex') },
       { expiresIn: '{{jwt.refreshExpiration}}' }
     );
 
