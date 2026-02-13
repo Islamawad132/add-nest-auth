@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>nest-authme - NestJS Auth Generator</title>
+<style>
+:root {
+  --bg-primary: #0d1117;
+  --bg-secondary: #161b22;
+  --bg-tertiary: #21262d;
+  --bg-hover: #30363d;
+  --text-primary: #c9d1d9;
+  --text-secondary: #8b949e;
+  --text-muted: #484f58;
+  --accent: #58a6ff;
+  --accent-hover: #79c0ff;
+  --success: #3fb950;
+  --warning: #d29922;
+  --error: #f85149;
+  --border: #30363d;
+  --radius: 8px;
+  --radius-lg: 12px;
+  --font-mono: 'SF Mono', 'Fira Code', 'Cascadia Code', 'Consolas', monospace;
+  --font-sans: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, Arial, sans-serif;
+}
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+body {
+  font-family: var(--font-sans);
+  background: var(--bg-primary);
+  color: var(--text-primary);
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Header */
+.header {
+  background: var(--bg-secondary);
+  border-bottom: 1px solid var(--border);
+  padding: 16px 24px;
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+.header .logo {
+  font-size: 20px;
+  font-weight: 700;
+  color: var(--accent);
+  font-family: var(--font-mono);
+}
+.header .subtitle {
+  color: var(--text-secondary);
+  font-size: 14px;
+}
+
+/* Layout */
+.layout {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+}
+
+/* Sidebar */
+.sidebar {
+  width: 240px;
+  background: var(--bg-secondary);
+  border-right: 1px solid var(--border);
+  padding: 24px 0;
+  flex-shrink: 0;
+}
+.step-item {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 24px;
+  cursor: default;
+  color: var(--text-muted);
+  font-size: 14px;
+  transition: all 0.2s;
+}
+.step-item.active {
+  color: var(--accent);
+  background: rgba(88, 166, 255, 0.08);
+  border-left: 3px solid var(--accent);
+  padding-left: 21px;
+}
+.step-item.completed {
+  color: var(--success);
+}
+.step-item .step-num {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+  border: 2px solid currentColor;
+  flex-shrink: 0;
+}
+.step-item.completed .step-num {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+
+/* Main */
+.main {
+  flex: 1;
+  overflow-y: auto;
+  padding: 32px 40px;
+}
+
+/* Step panels */
+.step-panel { display: none; }
+.step-panel.active { display: block; }
+
+/* Cards */
+.card {
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 24px;
+  margin-bottom: 20px;
+}
+.card h2 {
+  font-size: 18px;
+  margin-bottom: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.card h3 {
+  font-size: 15px;
+  color: var(--text-secondary);
+  margin-bottom: 12px;
+}
+
+/* Detection items */
+.detect-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 0;
+  font-size: 14px;
+}
+.detect-item .icon { font-size: 16px; }
+.detect-item.ok .icon { color: var(--success); }
+.detect-item.error .icon { color: var(--error); }
+
+/* Form elements */
+.form-group {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.form-group:last-child { border-bottom: none; }
+.form-label {
+  font-size: 14px;
+}
+.form-label .desc {
+  display: block;
+  color: var(--text-secondary);
+  font-size: 12px;
+  margin-top: 2px;
+}
+
+/* Toggle switch */
+.toggle {
+  position: relative;
+  width: 44px;
+  height: 24px;
+  flex-shrink: 0;
+}
+.toggle input { opacity: 0; width: 0; height: 0; }
+.toggle .slider {
+  position: absolute;
+  inset: 0;
+  background: var(--bg-tertiary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: 0.2s;
+  border: 1px solid var(--border);
+}
+.toggle .slider::before {
+  content: '';
+  position: absolute;
+  width: 18px;
+  height: 18px;
+  left: 2px;
+  top: 2px;
+  background: var(--text-secondary);
+  border-radius: 50%;
+  transition: 0.2s;
+}
+.toggle input:checked + .slider {
+  background: var(--accent);
+  border-color: var(--accent);
+}
+.toggle input:checked + .slider::before {
+  transform: translateX(20px);
+  background: #fff;
+}
+
+/* Select */
+select {
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 6px 12px;
+  font-size: 13px;
+  cursor: pointer;
+  outline: none;
+}
+select:focus { border-color: var(--accent); }
+
+/* Checkboxes */
+.checkbox-group {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  padding: 8px 0;
+}
+.checkbox-label {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  cursor: pointer;
+  padding: 4px 12px;
+  border-radius: 6px;
+  background: var(--bg-tertiary);
+  border: 1px solid var(--border);
+  transition: 0.2s;
+}
+.checkbox-label:hover { border-color: var(--accent); }
+.checkbox-label input { accent-color: var(--accent); }
+
+/* Buttons */
+.btn {
+  padding: 10px 24px;
+  border-radius: var(--radius);
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  border: 1px solid var(--border);
+  background: var(--bg-tertiary);
+  color: var(--text-primary);
+  transition: 0.2s;
+}
+.btn:hover { background: var(--bg-hover); }
+.btn-primary {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+.btn-primary:hover { background: var(--accent-hover); }
+.btn-success {
+  background: var(--success);
+  border-color: var(--success);
+  color: #fff;
+}
+.btn-group {
+  display: flex;
+  gap: 12px;
+  margin-top: 24px;
+}
+
+/* Preview layout */
+.preview-layout {
+  display: flex;
+  gap: 16px;
+  height: 500px;
+}
+.file-tree {
+  width: 280px;
+  overflow-y: auto;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  flex-shrink: 0;
+}
+.file-tree-header {
+  padding: 12px 16px;
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+}
+.tree-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  cursor: pointer;
+  transition: 0.15s;
+}
+.tree-item:hover { background: var(--bg-tertiary); }
+.tree-item.selected { background: rgba(88, 166, 255, 0.15); color: var(--accent); }
+.tree-item .badge {
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 4px;
+  font-weight: 600;
+  font-family: var(--font-sans);
+}
+.badge-new { background: rgba(63, 185, 80, 0.2); color: var(--success); }
+.badge-mod { background: rgba(210, 153, 34, 0.2); color: var(--warning); }
+
+.file-content {
+  flex: 1;
+  overflow: auto;
+  background: var(--bg-primary);
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+}
+.file-content-header {
+  padding: 10px 16px;
+  font-size: 13px;
+  font-family: var(--font-mono);
+  color: var(--text-secondary);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  position: sticky;
+  top: 0;
+  background: var(--bg-secondary);
+}
+.code-block {
+  padding: 16px;
+  font-family: var(--font-mono);
+  font-size: 13px;
+  line-height: 1.6;
+  white-space: pre;
+  overflow-x: auto;
+  tab-size: 2;
+}
+
+/* Syntax highlighting */
+.kw { color: #ff7b72; }
+.str { color: #a5d6ff; }
+.dec { color: #d2a8ff; }
+.cmt { color: #8b949e; font-style: italic; }
+.typ { color: #ffa657; }
+.num { color: #79c0ff; }
+
+/* Progress */
+.progress-bar {
+  width: 100%;
+  height: 6px;
+  background: var(--bg-tertiary);
+  border-radius: 3px;
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+.progress-fill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 3px;
+  transition: width 0.5s ease;
+}
+.progress-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 12px 16px;
+  border-radius: var(--radius);
+  margin-bottom: 8px;
+  background: var(--bg-secondary);
+  border: 1px solid var(--border);
+  font-size: 14px;
+  transition: 0.3s;
+}
+.progress-step .step-icon {
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+.progress-step.started { border-color: var(--accent); }
+.progress-step.completed { border-color: var(--success); }
+.progress-step.completed .step-icon { color: var(--success); }
+.progress-step.failed { border-color: var(--error); }
+.progress-step.failed .step-icon { color: var(--error); }
+.progress-step.warning { border-color: var(--warning); }
+.progress-step.warning .step-icon { color: var(--warning); }
+.progress-step .detail {
+  font-size: 12px;
+  color: var(--text-secondary);
+  margin-top: 2px;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+.spinner {
+  display: inline-block;
+  width: 18px;
+  height: 18px;
+  border: 2px solid var(--border);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+/* Success */
+.success-banner {
+  text-align: center;
+  padding: 32px;
+}
+.success-banner .big-icon {
+  font-size: 64px;
+  margin-bottom: 16px;
+}
+.success-banner h2 {
+  font-size: 24px;
+  margin-bottom: 8px;
+  justify-content: center;
+}
+.success-banner p {
+  color: var(--text-secondary);
+  margin-bottom: 24px;
+}
+
+.endpoints-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+  margin-top: 12px;
+}
+.endpoints-table th,
+.endpoints-table td {
+  text-align: left;
+  padding: 8px 12px;
+  border-bottom: 1px solid var(--border);
+}
+.endpoints-table th {
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+.endpoints-table code {
+  font-family: var(--font-mono);
+  color: var(--accent);
+  font-size: 12px;
+}
+
+/* Error */
+.error-box {
+  background: rgba(248, 81, 73, 0.1);
+  border: 1px solid var(--error);
+  border-radius: var(--radius);
+  padding: 16px;
+  color: var(--error);
+  font-size: 14px;
+  margin-bottom: 16px;
+}
+
+/* Status bar */
+.status-bar {
+  background: var(--bg-secondary);
+  border-top: 1px solid var(--border);
+  padding: 8px 24px;
+  font-size: 12px;
+  color: var(--text-muted);
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .sidebar { display: none; }
+  .main { padding: 20px; }
+  .preview-layout { flex-direction: column; height: auto; }
+  .file-tree { width: 100%; max-height: 200px; }
+}
+</style>
+</head>
+<body>
+
+<!-- Header -->
+<div class="header">
+  <span class="logo">AuthMe</span>
+  <span class="subtitle">NestJS Authentication Generator</span>
+</div>
+
+<!-- Layout -->
+<div class="layout">
+  <!-- Sidebar -->
+  <div class="sidebar">
+    <div class="step-item active" data-step="1">
+      <span class="step-num">1</span>
+      <span>Project Detection</span>
+    </div>
+    <div class="step-item" data-step="2">
+      <span class="step-num">2</span>
+      <span>Configuration</span>
+    </div>
+    <div class="step-item" data-step="3">
+      <span class="step-num">3</span>
+      <span>File Preview</span>
+    </div>
+    <div class="step-item" data-step="4">
+      <span class="step-num">4</span>
+      <span>Generation</span>
+    </div>
+    <div class="step-item" data-step="5">
+      <span class="step-num">5</span>
+      <span>Complete</span>
+    </div>
+  </div>
+
+  <!-- Main content -->
+  <div class="main">
+
+    <!-- Step 1: Project Detection -->
+    <div class="step-panel active" id="step-1">
+      <div class="card">
+        <h2>Project Detection</h2>
+        <p style="color:var(--text-secondary);margin-bottom:16px;">Analyzing your NestJS project...</p>
+        <div id="detect-results">
+          <div class="detect-item"><span class="spinner"></span> <span>Scanning project...</span></div>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="btn-to-config" disabled>Continue to Configuration</button>
+      </div>
+    </div>
+
+    <!-- Step 2: Configuration -->
+    <div class="step-panel" id="step-2">
+      <div class="card">
+        <h2>Authentication Strategy</h2>
+        <div class="form-group">
+          <div class="form-label">
+            JWT Authentication
+            <span class="desc">Passport.js with access + refresh tokens</span>
+          </div>
+          <span style="color:var(--success);font-size:13px;font-weight:600;">Selected</span>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Features</h2>
+        <div class="form-group">
+          <div class="form-label">Role-Based Access Control (RBAC)<span class="desc">Restrict routes by user role</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-rbac" checked><span class="slider"></span></label>
+        </div>
+        <div id="roles-group" class="checkbox-group" style="padding:0 0 12px;border-bottom:1px solid var(--border);">
+          <label class="checkbox-label"><input type="checkbox" value="Admin" checked> Admin</label>
+          <label class="checkbox-label"><input type="checkbox" value="User" checked> User</label>
+          <label class="checkbox-label"><input type="checkbox" value="Moderator"> Moderator</label>
+          <label class="checkbox-label"><input type="checkbox" value="Guest"> Guest</label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Refresh Token Rotation<span class="desc">Secure token refresh with one-time use</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-refresh" checked><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Rate Limiting<span class="desc">Throttle auth endpoints (3-5 req/min)</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-rate" checked><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Swagger API Documentation<span class="desc">Interactive API docs at /api</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-swagger" checked><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Unit Tests<span class="desc">Jest tests for AuthService and AuthController</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-tests" checked><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Username Field<span class="desc">Add unique username to user entity</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-username"><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Email Verification<span class="desc">Token-based email verification flow</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-email-verify"><span class="slider"></span></label>
+        </div>
+        <div class="form-group">
+          <div class="form-label">Forgot/Reset Password<span class="desc">Token-based password reset flow</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-reset-pw" checked><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>JWT Configuration</h2>
+        <div class="form-group">
+          <div class="form-label">Access Token Expiration</div>
+          <select id="cfg-access-exp">
+            <option value="15m">15 minutes</option>
+            <option value="30m">30 minutes</option>
+            <option value="1h" selected>1 hour (Recommended)</option>
+            <option value="4h">4 hours</option>
+            <option value="1d">1 day</option>
+          </select>
+        </div>
+        <div class="form-group" id="refresh-exp-group">
+          <div class="form-label">Refresh Token Expiration</div>
+          <select id="cfg-refresh-exp">
+            <option value="7d" selected>7 days (Recommended)</option>
+            <option value="30d">30 days</option>
+            <option value="90d">90 days</option>
+            <option value="1y">1 year</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="card">
+        <h2>Options</h2>
+        <div class="form-group">
+          <div class="form-label">Auto-install Dependencies<span class="desc">Run npm/yarn/pnpm install after generation</span></div>
+          <label class="toggle"><input type="checkbox" id="cfg-auto-install" checked><span class="slider"></span></label>
+        </div>
+      </div>
+
+      <div class="btn-group">
+        <button class="btn" onclick="goToStep(1)">Back</button>
+        <button class="btn" onclick="requestPreview()">Preview Files</button>
+        <button class="btn btn-primary" onclick="requestGenerate()">Generate</button>
+      </div>
+    </div>
+
+    <!-- Step 3: File Preview -->
+    <div class="step-panel" id="step-3">
+      <div class="card" style="padding:16px;">
+        <div class="preview-layout">
+          <div class="file-tree">
+            <div class="file-tree-header" id="preview-count">Files</div>
+            <div id="file-tree-list"></div>
+          </div>
+          <div class="file-content">
+            <div class="file-content-header" id="preview-file-name">Select a file to preview</div>
+            <div class="code-block" id="preview-code"></div>
+          </div>
+        </div>
+      </div>
+      <div class="btn-group">
+        <button class="btn" onclick="goToStep(2)">Back to Config</button>
+        <button class="btn btn-primary" onclick="requestGenerate()">Generate</button>
+      </div>
+    </div>
+
+    <!-- Step 4: Generation Progress -->
+    <div class="step-panel" id="step-4">
+      <div class="card">
+        <h2>Generating Authentication Module</h2>
+        <div class="progress-bar"><div class="progress-fill" id="gen-progress-bar" style="width:0%"></div></div>
+        <div id="progress-list"></div>
+      </div>
+    </div>
+
+    <!-- Step 5: Complete -->
+    <div class="step-panel" id="step-5">
+      <div id="result-success" style="display:none;">
+        <div class="card">
+          <div class="success-banner">
+            <div class="big-icon">&#x1F389;</div>
+            <h2>Authentication Module Generated!</h2>
+            <p id="success-summary"></p>
+          </div>
+        </div>
+        <div class="card">
+          <h2>Next Steps</h2>
+          <div id="next-steps" style="font-size:14px;line-height:1.8;"></div>
+        </div>
+        <div class="card">
+          <h2>API Endpoints</h2>
+          <table class="endpoints-table">
+            <thead><tr><th>Method</th><th>Endpoint</th><th>Auth</th><th>Description</th></tr></thead>
+            <tbody id="endpoints-body"></tbody>
+          </table>
+        </div>
+        <div class="btn-group">
+          <button class="btn btn-primary" onclick="shutdownServer()">Close</button>
+        </div>
+      </div>
+      <div id="result-error" style="display:none;">
+        <div class="card">
+          <h2 style="color:var(--error);">Generation Failed</h2>
+          <div id="error-details"></div>
+        </div>
+        <div class="btn-group">
+          <button class="btn" onclick="goToStep(2)">Back to Config</button>
+          <button class="btn btn-primary" onclick="requestGenerate()">Try Again</button>
+        </div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- Status bar -->
+<div class="status-bar">
+  <span id="status-text">Ready</span>
+  <span id="status-project"></span>
+</div>
+
+<script>
+// State
+const state = {
+  currentStep: 1,
+  projectInfo: null,
+  previewData: null,
+  progressSteps: [],
+  totalGenSteps: 5,
+  completedGenSteps: 0,
+  sseConnection: null,
+  generationResult: null,
+};
+
+// Init
+window.addEventListener('load', () => {
+  loadProjectInfo();
+  connectSSE();
+  setupFormListeners();
+});
+
+// SSE
+function connectSSE() {
+  state.sseConnection = new EventSource('/api/events');
+
+  state.sseConnection.addEventListener('progress', (e) => {
+    const data = JSON.parse(e.data);
+    handleProgressEvent(data);
+  });
+
+  state.sseConnection.addEventListener('generation-complete', (e) => {
+    const data = JSON.parse(e.data);
+    state.generationResult = data;
+    showResult(data);
+  });
+
+  state.sseConnection.addEventListener('server-shutdown', () => {
+    state.sseConnection.close();
+    document.getElementById('status-text').textContent = 'Server stopped. You can close this tab.';
+  });
+
+  state.sseConnection.onerror = () => {
+    document.getElementById('status-text').textContent = 'Connection lost.';
+  };
+}
+
+// Project detection
+async function loadProjectInfo() {
+  try {
+    const res = await fetch('/api/project');
+    const data = await res.json();
+    state.projectInfo = data;
+    renderProjectInfo(data);
+  } catch (err) {
+    document.getElementById('detect-results').innerHTML =
+      '<div class="detect-item error"><span class="icon">&#10060;</span> Failed to detect project</div>';
+  }
+}
+
+function renderProjectInfo(info) {
+  const el = document.getElementById('detect-results');
+  let html = '';
+
+  if (info.isValid) {
+    html += item('ok', '&#10004;', `Detected NestJS ${info.nestVersion || 'project'}`);
+    if (info.orm && info.orm !== 'none') {
+      html += item('ok', '&#10004;', `Found ${info.orm.toUpperCase()}${info.database ? ' (' + info.database + ')' : ''}`);
+    } else {
+      html += item('ok', '&#8226;', 'No ORM detected (will use TypeORM)');
+    }
+    html += item('ok', '&#10004;', `Source directory: ${info.sourceRoot}/`);
+    if (info.authExists) {
+      html += item('error', '&#9888;', 'Existing auth/ directory found (will be overwritten)');
+    } else {
+      html += item('ok', '&#10004;', 'No existing auth module');
+    }
+    document.getElementById('btn-to-config').disabled = false;
+    document.getElementById('status-project').textContent = info.root;
+  } else {
+    html += item('error', '&#10060;', 'Not a valid NestJS project');
+    info.errors.forEach(e => { html += item('error', '&#8226;', e); });
+    document.getElementById('btn-to-config').disabled = true;
+  }
+
+  el.innerHTML = html;
+  document.getElementById('btn-to-config').onclick = () => goToStep(2);
+
+  function item(cls, icon, text) {
+    return `<div class="detect-item ${cls}"><span class="icon">${icon}</span> <span>${text}</span></div>`;
+  }
+}
+
+// Form
+function setupFormListeners() {
+  const rbac = document.getElementById('cfg-rbac');
+  const refresh = document.getElementById('cfg-refresh');
+  const rolesGroup = document.getElementById('roles-group');
+  const refreshExpGroup = document.getElementById('refresh-exp-group');
+
+  rbac.addEventListener('change', () => {
+    rolesGroup.style.display = rbac.checked ? 'flex' : 'none';
+  });
+  refresh.addEventListener('change', () => {
+    refreshExpGroup.style.display = refresh.checked ? 'flex' : 'none';
+  });
+}
+
+function collectFormValues() {
+  const rbac = document.getElementById('cfg-rbac').checked;
+  const roles = rbac
+    ? Array.from(document.querySelectorAll('#roles-group input:checked')).map(el => el.value)
+    : [];
+
+  return {
+    strategy: 'jwt',
+    enableRBAC: rbac,
+    roles: roles.length > 0 ? roles : ['Admin', 'User'],
+    refreshTokens: document.getElementById('cfg-refresh').checked,
+    accessExpiration: document.getElementById('cfg-access-exp').value,
+    refreshExpiration: document.getElementById('cfg-refresh-exp').value,
+    enableRateLimiting: document.getElementById('cfg-rate').checked,
+    enableSwagger: document.getElementById('cfg-swagger').checked,
+    generateTests: document.getElementById('cfg-tests').checked,
+    useUsername: document.getElementById('cfg-username').checked,
+    enableEmailVerification: document.getElementById('cfg-email-verify').checked,
+    enableResetPassword: document.getElementById('cfg-reset-pw').checked,
+    useDetectedORM: true,
+    database: (state.projectInfo && state.projectInfo.database) || 'postgres',
+    autoInstall: document.getElementById('cfg-auto-install').checked,
+  };
+}
+
+// Preview
+async function requestPreview() {
+  document.getElementById('status-text').textContent = 'Loading preview...';
+  try {
+    const res = await fetch('/api/preview', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ answers: collectFormValues() }),
+    });
+    const data = await res.json();
+
+    if (!res.ok) {
+      alert('Preview failed: ' + (data.error || 'Unknown error'));
+      document.getElementById('status-text').textContent = 'Preview failed';
+      return;
+    }
+
+    state.previewData = data;
+    renderPreview(data);
+    goToStep(3);
+    document.getElementById('status-text').textContent = `Preview: ${data.totalFiles} files`;
+  } catch (err) {
+    alert('Preview request failed');
+    document.getElementById('status-text').textContent = 'Ready';
+  }
+}
+
+function renderPreview(data) {
+  const list = document.getElementById('file-tree-list');
+  const countEl = document.getElementById('preview-count');
+  countEl.textContent = `${data.files.length} new files + ${data.modifiedFiles.length} modified`;
+  list.innerHTML = '';
+
+  // Modified files
+  data.modifiedFiles.forEach(f => {
+    const div = document.createElement('div');
+    div.className = 'tree-item';
+    div.innerHTML = `<span class="badge badge-mod">MOD</span> ${shortPath(f.path)}`;
+    div.title = f.description;
+    list.appendChild(div);
+  });
+
+  // New files
+  data.files.forEach((f, i) => {
+    const div = document.createElement('div');
+    div.className = 'tree-item';
+    div.dataset.index = i;
+    div.innerHTML = `<span class="badge badge-new">NEW</span> ${shortPath(f.path)}`;
+    div.addEventListener('click', () => selectPreviewFile(i));
+    list.appendChild(div);
+  });
+
+  // Select first file
+  if (data.files.length > 0) selectPreviewFile(0);
+}
+
+function selectPreviewFile(index) {
+  const file = state.previewData.files[index];
+  document.getElementById('preview-file-name').textContent = file.path;
+  document.getElementById('preview-code').innerHTML = highlightTS(escapeHtml(file.content));
+
+  // Update selection
+  document.querySelectorAll('#file-tree-list .tree-item').forEach(el => el.classList.remove('selected'));
+  const item = document.querySelector(`#file-tree-list .tree-item[data-index="${index}"]`);
+  if (item) item.classList.add('selected');
+}
+
+function shortPath(p) {
+  return p.length > 40 ? '...' + p.slice(-37) : p;
+}
+
+// Generation
+async function requestGenerate() {
+  state.progressSteps = [];
+  state.completedGenSteps = 0;
+  document.getElementById('progress-list').innerHTML = '';
+  document.getElementById('gen-progress-bar').style.width = '0%';
+
+  const autoInstall = document.getElementById('cfg-auto-install').checked;
+  state.totalGenSteps = autoInstall ? 5 : 4;
+
+  goToStep(4);
+  document.getElementById('status-text').textContent = 'Generating...';
+
+  try {
+    await fetch('/api/generate', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        answers: collectFormValues(),
+        overwrite: state.projectInfo && state.projectInfo.authExists,
+      }),
+    });
+  } catch (err) {
+    // Response may close early since server returns 202
+  }
+}
+
+// Progress
+function handleProgressEvent(event) {
+  const list = document.getElementById('progress-list');
+  let el = document.getElementById('prog-' + event.step);
+
+  if (!el) {
+    el = document.createElement('div');
+    el.id = 'prog-' + event.step;
+    el.className = 'progress-step';
+    list.appendChild(el);
+  }
+
+  el.className = `progress-step ${event.status}`;
+
+  let icon = '';
+  switch (event.status) {
+    case 'started': icon = '<span class="spinner"></span>'; break;
+    case 'completed': icon = '<span style="color:var(--success);font-size:18px;">&#10004;</span>'; break;
+    case 'failed': icon = '<span style="color:var(--error);font-size:18px;">&#10060;</span>'; break;
+    case 'warning': icon = '<span style="color:var(--warning);font-size:18px;">&#9888;</span>'; break;
+  }
+
+  el.innerHTML = `
+    <div class="step-icon">${icon}</div>
+    <div>
+      <div>${event.label}</div>
+      ${event.detail ? `<div class="detail">${escapeHtml(event.detail)}</div>` : ''}
+    </div>
+  `;
+
+  if (event.status === 'completed' || event.status === 'warning') {
+    state.completedGenSteps++;
+    const pct = Math.round((state.completedGenSteps / state.totalGenSteps) * 100);
+    document.getElementById('gen-progress-bar').style.width = pct + '%';
+  }
+}
+
+// Results
+function showResult(result) {
+  if (result.success) {
+    document.getElementById('gen-progress-bar').style.width = '100%';
+    document.getElementById('result-success').style.display = 'block';
+    document.getElementById('result-error').style.display = 'none';
+    document.getElementById('success-summary').textContent =
+      `Created ${result.filesCreated.length} files successfully.` +
+      (result.warnings.length > 0 ? ` (${result.warnings.length} warning${result.warnings.length > 1 ? 's' : ''})` : '');
+    renderNextSteps();
+    renderEndpoints();
+    document.getElementById('status-text').textContent = 'Generation complete!';
+  } else {
+    document.getElementById('result-success').style.display = 'none';
+    document.getElementById('result-error').style.display = 'block';
+    const errEl = document.getElementById('error-details');
+    errEl.innerHTML = result.errors.map(e => `<div class="error-box">${escapeHtml(e)}</div>`).join('');
+    document.getElementById('status-text').textContent = 'Generation failed';
+  }
+
+  goToStep(5);
+}
+
+function renderNextSteps() {
+  const el = document.getElementById('next-steps');
+  const info = state.projectInfo;
+  let html = '<ol style="padding-left:20px;">';
+  html += '<li>Review <code>.env</code> file (auto-generated with secure secret)</li>';
+
+  if (info && info.orm === 'prisma') {
+    html += '<li>Copy models from <code>prisma-schema-additions.prisma</code> into your schema</li>';
+    html += '<li>Run: <code>npx prisma migrate dev --name add-auth-models && npx prisma generate</code></li>';
+  } else {
+    html += '<li>Create database migration if using TypeORM</li>';
+  }
+
+  html += '<li>Start your app: <code>npm run start:dev</code></li>';
+  html += '<li>Test the endpoints below</li>';
+  html += '</ol>';
+  el.innerHTML = html;
+}
+
+function renderEndpoints() {
+  const cfg = collectFormValues();
+  const tbody = document.getElementById('endpoints-body');
+  const rows = [
+    ['POST', '/auth/register', 'Public', 'Register a new user'],
+    ['POST', '/auth/login', 'Public', 'Login and get tokens'],
+    ['POST', '/auth/change-password', 'JWT', 'Change password'],
+  ];
+
+  if (cfg.enableResetPassword) {
+    rows.push(['POST', '/auth/forgot-password', 'Public', 'Request password reset']);
+    rows.push(['POST', '/auth/reset-password', 'Public', 'Reset password with token']);
+  }
+  if (cfg.enableEmailVerification) {
+    rows.push(['GET', '/auth/verify-email', 'Public', 'Verify email address']);
+    rows.push(['POST', '/auth/resend-verification', 'Public', 'Resend verification email']);
+  }
+  if (cfg.refreshTokens) {
+    rows.push(['POST', '/auth/refresh', 'Public', 'Refresh access token']);
+    rows.push(['POST', '/auth/logout', 'JWT', 'Logout (invalidate refresh token)']);
+    rows.push(['POST', '/auth/logout-all', 'JWT', 'Logout from all devices']);
+  }
+  rows.push(['GET', '/users/profile', 'JWT', 'Get current user profile']);
+  if (cfg.enableRBAC) {
+    rows.push(['GET', '/users', 'JWT + Admin', 'List all users']);
+  }
+
+  tbody.innerHTML = rows.map(r =>
+    `<tr><td><code>${r[0]}</code></td><td><code>${r[1]}</code></td><td>${r[2]}</td><td>${r[3]}</td></tr>`
+  ).join('');
+}
+
+// Navigation
+function goToStep(step) {
+  // Mark previous steps as completed
+  document.querySelectorAll('.step-item').forEach(el => {
+    const s = parseInt(el.dataset.step);
+    el.classList.remove('active');
+    if (s < step) el.classList.add('completed');
+    if (s === step) el.classList.add('active');
+  });
+
+  document.querySelectorAll('.step-panel').forEach(el => el.classList.remove('active'));
+  document.getElementById('step-' + step).classList.add('active');
+  state.currentStep = step;
+}
+
+// Shutdown
+async function shutdownServer() {
+  try {
+    await fetch('/api/shutdown', { method: 'POST' });
+  } catch {}
+  document.getElementById('status-text').textContent = 'Server stopped. You can close this tab.';
+}
+
+// Utilities
+function escapeHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;');
+}
+
+function highlightTS(html) {
+  // Comments (single-line)
+  html = html.replace(/(\/\/[^\n]*)/g, '<span class="cmt">$1</span>');
+  // Strings
+  html = html.replace(/(&#39;[^&#39;]*?&#39;|&quot;[^&quot;]*?&quot;)/g, '<span class="str">$1</span>');
+  // Decorators
+  html = html.replace(/@(\w+)/g, '<span class="dec">@$1</span>');
+  // Keywords
+  html = html.replace(/\b(import|export|from|class|interface|extends|implements|constructor|async|await|return|if|else|new|const|let|var|function|type|enum|public|private|protected|readonly|static|throw|try|catch|for|while|this|super|true|false|null|undefined|void|typeof|instanceof|as)\b/g, '<span class="kw">$1</span>');
+  // Types
+  html = html.replace(/\b(string|number|boolean|any|Promise|void|Date|Record)\b/g, '<span class="typ">$1</span>');
+  // Numbers
+  html = html.replace(/\b(\d+)\b/g, '<span class="num">$1</span>');
+  return html;
+}
+</script>
+</body>
+</html>

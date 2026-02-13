@@ -90,7 +90,7 @@ export class Generator {
   /**
    * Build file generation plan
    */
-  private buildGenerationPlan(config: AuthConfig): FileSpec[] {
+  public buildGenerationPlan(config: AuthConfig): FileSpec[] {
     const plan: FileSpec[] = [];
 
     // Core auth module files

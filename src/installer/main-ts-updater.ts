@@ -3,8 +3,7 @@
  * Adds Global JWT Guard, ValidationPipe, and optionally Swagger to the NestJS bootstrap function
  */
 
-import { Project, SourceFile, SyntaxKind, Node, IndentationText } from 'ts-morph';
-import * as path from 'path';
+import { Project, SourceFile, Node, IndentationText } from 'ts-morph';
 import * as fs from 'fs-extra';
 import { AuthConfig } from '../types/index.js';
 

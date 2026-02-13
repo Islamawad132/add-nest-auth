@@ -3,7 +3,7 @@
  */
 
 import inquirer from 'inquirer';
-import { AuthConfig, ORM } from '../types/index.js';
+import { AuthConfig, ORM, Database } from '../types/index.js';
 import { generateSecret } from '../config/utils.js';
 
 export interface PromptAnswers {
@@ -170,7 +170,7 @@ export async function promptConfig(detectedORM: ORM, detectedDB?: string): Promi
 /**
  * Get default answers (for --yes flag)
  */
-export function getDefaultAnswers(detectedORM: ORM, detectedDB?: string): PromptAnswers {
+export function getDefaultAnswers(_detectedORM: ORM, detectedDB?: string): PromptAnswers {
   return {
     strategy: 'jwt',
     enableRBAC: true,
@@ -209,7 +209,7 @@ export function buildConfig(
       roles: answers.roles || [],
     },
     orm: answers.useDetectedORM !== false ? detectedORM : 'none',
-    database: answers.database || detectedDB || 'postgres',
+    database: (answers.database || detectedDB || 'postgres') as Database,
     features: {
       refreshTokens: answers.refreshTokens,
       rateLimiting: answers.enableRateLimiting,

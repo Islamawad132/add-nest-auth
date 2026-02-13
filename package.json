@@ -27,9 +27,10 @@
     "LICENSE"
   ],
   "scripts": {
-    "build": "tsup src/index.ts src/cli.ts --format cjs --dts --clean && npm run copy-templates",
+    "build": "tsup src/index.ts src/cli.ts src/gui/server.ts src/gui/orchestrator.ts src/gui/index.ts --format cjs --dts --clean && npm run copy-templates && npm run copy-gui",
     "copy-templates": "node -e \"require('fs-extra').copySync('src/generator/templates', 'dist/generator/templates')\"",
-    "dev": "tsup src/index.ts src/cli.ts --format cjs --dts --watch",
+    "copy-gui": "node -e \"require('fs-extra').ensureDirSync('dist/gui'); require('fs-extra').copySync('src/gui/gui.html', 'dist/gui/gui.html')\"",
+    "dev": "tsup src/index.ts src/cli.ts src/gui/server.ts src/gui/orchestrator.ts src/gui/index.ts --format cjs --dts --watch",
     "test": "vitest",
     "test:watch": "vitest --watch",
     "prepublishOnly": "npm run build"
@@ -51,6 +52,7 @@
     "fs-extra": "^11.2.0",
     "handlebars": "^4.7.8",
     "inquirer": "^9.2.23",
+    "open": "^10.1.0",
     "ora": "^7.0.1",
     "ts-morph": "^21.0.1"
   },

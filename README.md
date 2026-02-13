@@ -24,6 +24,7 @@ Stop writing the same authentication code for every NestJS project. Generate a c
 - **Unit Tests** - Generated Jest tests for AuthService and AuthController
 - **Custom Decorators** - `@Public()`, `@CurrentUser()`, `@Roles()`
 - **Security Best Practices** - bcrypt, class-validator, secure defaults, crypto-random secrets
+- **Web GUI Mode** - Optional browser-based visual interface with live preview and real-time progress
 - **`--yes` Flag** - Skip prompts with sensible defaults
 
 ---
@@ -35,11 +36,22 @@ cd my-nestjs-app
 npx nest-authme
 ```
 
-Follow the interactive prompts, or skip them:
+You'll be asked to choose your interface:
+
+```
+? Choose your interface:
+❯ CLI  — Terminal-based prompts
+  GUI  — Web-based visual interface
+```
+
+Or launch a specific mode directly:
 
 ```bash
-npx nest-authme --yes
+npx nest-authme --yes   # CLI with sensible defaults
+npx nest-authme --gui   # Open web GUI in browser
 ```
+
+### CLI Mode
 
 ```
 🔐 NestJS Authentication Module Generator v1.3.2
@@ -69,6 +81,31 @@ Then start your app:
 
 ```bash
 npm run start:dev
+```
+
+---
+
+## GUI Mode
+
+Launch a visual web interface instead of terminal prompts:
+
+```bash
+npx nest-authme --gui
+```
+
+A local server starts and opens your browser automatically. The GUI provides:
+
+1. **Project Detection** — Shows your NestJS version, ORM, and source root
+2. **Visual Configuration** — Toggle switches, dropdowns, and checkboxes for all options
+3. **File Preview** — Browse generated files with syntax highlighting before writing
+4. **Real-Time Progress** — Watch each generation step complete live
+5. **Success Summary** — API endpoints table, next steps, and generated file count
+
+The server runs on `localhost` only (no external access) and auto-shuts down after generation completes.
+
+```bash
+# Custom port
+npx nest-authme --gui --port 4000
 ```
 
 ---
@@ -275,7 +312,6 @@ Check your database credentials in `.env` and ensure the database server is runn
 - Session-based authentication
 - Two-factor authentication (TOTP)
 - Account lockout
-- Admin panel UI
 
 ---
 
