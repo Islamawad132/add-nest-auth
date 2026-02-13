@@ -134,25 +134,29 @@ export class GuiServer {
   }
 
   private handleGetIndex(res: http.ServerResponse): void {
-    // __dirname is dist/gui/ when compiled, so gui.html is in the same directory
-    const htmlPath = path.join(__dirname, 'gui.html');
+    // Try multiple locations: __dirname varies depending on how the code is loaded
+    // - dist/gui/server.js (standalone): __dirname = dist/gui/ → gui.html is in same dir
+    // - dist/cli.js (bundled by tsup): __dirname = dist/ → gui.html is in gui/ subfolder
+    const candidates = [
+      path.join(__dirname, 'gui.html'),
+      path.join(__dirname, 'gui', 'gui.html'),
+      path.join(__dirname, '..', 'dist', 'gui', 'gui.html'),
+      path.join(__dirname, '..', 'src', 'gui', 'gui.html'),
+    ];
 
-    try {
-      const html = fs.readFileSync(htmlPath, 'utf-8');
-      res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
-      res.end(html);
-    } catch {
-      // Fallback: try from src directory during development
-      const devPath = path.join(__dirname, '..', '..', 'src', 'gui', 'gui.html');
+    for (const candidate of candidates) {
       try {
-        const html = fs.readFileSync(devPath, 'utf-8');
+        const html = fs.readFileSync(candidate, 'utf-8');
         res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
         res.end(html);
+        return;
       } catch {
-        res.writeHead(500, { 'Content-Type': 'text/plain' });
-        res.end('GUI HTML file not found. Please rebuild with: npm run build');
+        // Try next candidate
       }
     }
+
+    res.writeHead(500, { 'Content-Type': 'text/plain' });
+    res.end('GUI HTML file not found. Please rebuild with: npm run build');
   }
 
   private async handleGetProject(res: http.ServerResponse): Promise<void> {
