@@ -333,7 +333,11 @@ describe('AuthService', () => {
 
       const result = await authService.resendVerification('test@example.com');
 
+{{#if features.emailService}}
+      expect(result.message).toBeDefined();
+{{else}}
       expect(result.verificationToken).toBeDefined();
+{{/if}}
       expect(mockUsersService.setVerificationToken).toHaveBeenCalled();
     });
   });
@@ -347,7 +351,11 @@ describe('AuthService', () => {
 
       const result = await authService.forgotPassword({ email: 'test@example.com' });
 
+{{#if features.emailService}}
+      expect(result.message).toBeDefined();
+{{else}}
       expect(result.resetToken).toBeDefined();
+{{/if}}
       expect(mockUsersService.setResetToken).toHaveBeenCalled();
     });
 
