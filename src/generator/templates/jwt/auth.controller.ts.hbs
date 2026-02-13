@@ -101,7 +101,7 @@ export class AuthController {
   @ApiResponse({ status: 200, description: 'Verification token generated' })
   @ApiResponse({ status: 404, description: 'User not found' })
 {{/if}}
-  async resendVerification(@Body('email') email: string): Promise<{ verificationToken: string; message: string }> {
+  async resendVerification(@Body('email') email: string): Promise<{ message: string }> {
     return this.authService.resendVerification(email);
   }
 {{/if}}
@@ -117,7 +117,7 @@ export class AuthController {
   @ApiOperation({ summary: 'Request password reset' })
   @ApiResponse({ status: 200, description: 'Reset token generated if email exists' })
 {{/if}}
-  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<{ resetToken: string; message: string }> {
+  async forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto): Promise<{ message: string }> {
     return this.authService.forgotPassword(forgotPasswordDto);
   }
 
