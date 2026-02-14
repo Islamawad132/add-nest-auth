@@ -181,7 +181,6 @@ export class Generator {
       plan.push(
         { template: 'prisma/prisma.service.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.service.ts` },
         { template: 'prisma/prisma.module.ts.hbs', output: `${config.sourceRoot}/prisma/prisma.module.ts` },
-        { template: 'prisma/schema.prisma.additions.hbs', output: 'prisma-schema-additions.prisma' },
       );
     }
 

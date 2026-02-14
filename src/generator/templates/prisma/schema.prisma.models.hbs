@@ -1,0 +1,47 @@
+model User {
+  id        String   @id @default(uuid())
+  email     String   @unique
+{{#if features.useUsername}}
+  username  String   @unique
+{{/if}}
+  password  String{{#if oauth}}?{{/if}}
+{{#if oauth}}
+{{#if oauth.google}}
+  googleId  String?  @unique
+{{/if}}
+{{#if oauth.github}}
+  githubId  String?  @unique
+{{/if}}
+{{/if}}
+{{#if rbac.enabled}}
+  roles     String[] @default(["User"])
+{{/if}}
+{{#if features.emailVerification}}
+  isEmailVerified        Boolean  @default(false)
+  emailVerificationToken String?
+{{/if}}
+{{#if features.resetPassword}}
+  passwordResetToken     String?
+  passwordResetExpires   DateTime?
+{{/if}}
+{{#if features.accountLockout}}
+  failedLoginAttempts Int      @default(0)
+  lockUntil           DateTime?
+{{/if}}
+{{#if features.refreshTokens}}
+  refreshTokens RefreshToken[]
+{{/if}}
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+{{#if features.refreshTokens}}
+
+model RefreshToken {
+  id        String   @id @default(uuid())
+  token     String   @unique
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+}
+{{/if}}

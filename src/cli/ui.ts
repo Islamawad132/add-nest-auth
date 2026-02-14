@@ -87,6 +87,7 @@ export function showSuccess(stats: {
   swagger?: boolean;
   emailVerification?: boolean;
   resetPassword?: boolean;
+  prismaSchemaUpdated?: boolean;
 }): void {
   console.log();
   console.log(chalk.green.bold('🎉 Success!'), 'Authentication module generated.');
@@ -124,10 +125,16 @@ export function showSuccess(stats: {
   console.log();
 
   if (stats.orm === 'prisma') {
-    console.log(chalk.cyan('   2. Add Prisma schema models (see prisma-schema-additions.prisma)'));
-    console.log(chalk.gray('      # Copy the models into your prisma/schema.prisma'));
-    console.log(chalk.gray('      npx prisma migrate dev --name add-auth-models'));
-    console.log(chalk.gray('      npx prisma generate'));
+    if (stats.prismaSchemaUpdated) {
+      console.log(chalk.cyan('   2. Run Prisma migration'));
+      console.log(chalk.gray('      npx prisma migrate dev --name add-auth-models'));
+      console.log(chalk.gray('      npx prisma generate'));
+    } else {
+      console.log(chalk.cyan('   2. Add Prisma schema models manually'));
+      console.log(chalk.gray('      # Check src/auth/README.md for the model definitions'));
+      console.log(chalk.gray('      npx prisma migrate dev --name add-auth-models'));
+      console.log(chalk.gray('      npx prisma generate'));
+    }
   } else {
     console.log(chalk.cyan('   2. Create database migration (if using TypeORM)'));
     console.log(chalk.gray('      npm run migration:generate -- src/migrations/CreateUserTable'));

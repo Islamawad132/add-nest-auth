@@ -83,6 +83,13 @@ export class GuiOrchestrator extends EventEmitter {
       { path: 'package.json', description: 'Add authentication dependencies' },
     ];
 
+    if (config.orm === 'prisma') {
+      modifiedFiles.push({
+        path: 'prisma/schema.prisma',
+        description: 'Append User and RefreshToken models',
+      });
+    }
+
     return {
       files,
       modifiedFiles,
@@ -122,6 +129,29 @@ export class GuiOrchestrator extends EventEmitter {
       this.emitProgress('ast-app-module', 'Failed to update app.module.ts', 'failed', msg);
       errors.push(msg);
       return { success: false, filesCreated: result.filesCreated, filesSkipped: result.filesSkipped, errors, warnings };
+    }
+
+    // Step 2.5: Update prisma/schema.prisma (if Prisma)
+    if (config.orm === 'prisma') {
+      this.emitProgress('prisma-schema', 'Updating prisma/schema.prisma...', 'started');
+      try {
+        const { PrismaSchemaUpdater } = await import('../installer/index.js');
+        const schemaPath = path.join(projectInfo.root, 'prisma', 'schema.prisma');
+        const prismaUpdater = new PrismaSchemaUpdater(schemaPath);
+        const prismaResult = await prismaUpdater.update(config);
+
+        if (prismaResult.updated) {
+          await prismaUpdater.cleanupBackup();
+          this.emitProgress('prisma-schema', prismaResult.message, 'completed');
+        } else {
+          this.emitProgress('prisma-schema', prismaResult.message, 'warning');
+          warnings.push(prismaResult.message);
+        }
+      } catch (error) {
+        const msg = error instanceof Error ? error.message : 'Unknown error';
+        this.emitProgress('prisma-schema', 'Could not update prisma/schema.prisma', 'warning', msg);
+        warnings.push('Could not update prisma/schema.prisma - add models manually');
+      }
     }
 
     // Step 3: Update main.ts

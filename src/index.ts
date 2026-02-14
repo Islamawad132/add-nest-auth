@@ -2,6 +2,7 @@
  * Main CLI orchestrator
  */
 
+import * as path from 'path';
 import { detectProject } from './analyzer/index.js';
 import { promptConfig, buildConfig, getDefaultAnswers } from './cli/prompts.js';
 import {
@@ -117,6 +118,31 @@ export async function run(cwd: string = process.cwd(), options: RunOptions = {})
     process.exit(1);
   }
 
+  // Update prisma/schema.prisma (if Prisma ORM)
+  let prismaSchemaUpdated = false;
+  if (config.orm === 'prisma') {
+    const prismaSpinner = createSpinner('Updating prisma/schema.prisma...').start();
+
+    try {
+      const { PrismaSchemaUpdater } = await import('./installer/index.js');
+      const schemaPath = path.join(projectInfo.root, 'prisma', 'schema.prisma');
+      const prismaUpdater = new PrismaSchemaUpdater(schemaPath);
+      const prismaResult = await prismaUpdater.update(config);
+
+      if (prismaResult.updated) {
+        await prismaUpdater.cleanupBackup();
+        prismaSpinner.succeed(prismaResult.message);
+        prismaSchemaUpdated = true;
+      } else {
+        prismaSpinner.warn(prismaResult.message);
+      }
+    } catch (error) {
+      prismaSpinner.warn(
+        `Could not update prisma/schema.prisma: ${error instanceof Error ? error.message : 'Unknown error'}`
+      );
+    }
+  }
+
   // Update main.ts with global guards
   const mainSpinner = createSpinner('Updating main.ts with global guards...').start();
 
@@ -179,6 +205,7 @@ export async function run(cwd: string = process.cwd(), options: RunOptions = {})
     swagger: config.features.swagger,
     emailVerification: config.features.emailVerification,
     resetPassword: config.features.resetPassword,
+    prismaSchemaUpdated,
   });
 
   console.log('🐛 Issues? https://github.com/Islamawad132/add-nest-auth/issues');
